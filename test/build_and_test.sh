@@ -15,7 +15,7 @@ build_and_test_dir() {
         test_name=${test_name%.*}
         test_out="$BUILD_DIR/$what/${test_name}.o"
         echo "$test_cpp -> $test_out"
-        $CXX $test_cpp $CXXFLAGS $COVFLAGS $flags -o "${test_out}" || exit 1
+        $CXX $test_cpp $CXXFLAGS $COVFLAGS $flags -c -o "${test_out}" || exit 1
     done
     echo "Linking..."
     $CXX "$BUILD_DIR/$what"/*.o $COVFLAGS $LDFLAGS -o "$BUILD_DIR/$what/test" || exit 1

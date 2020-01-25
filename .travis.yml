@@ -65,6 +65,7 @@ script:
   - export CXXFLAGS="-std=c++98 -O0 -g -Wall -Wextra -Wconversion"
   - export CXXFLAGS="$CXXFLAGS -I$PROJECT_DIR/.."
   - export CXXFLAGS="$CXXFLAGS -I$GTEST_DIR/include"
+  - export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$GTEST_DIR/lib
   - export CXXFLAGS="$CXXFLAGS -I$EXTRA_DIR"
   # Set linker flags
   - export LDFLAGS="-rdynamic -lgtest_main -lgtest -lpthread -ldl -L$GTEST_DIR/lib"
