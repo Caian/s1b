@@ -1,0 +1,78 @@
+dist: trusty
+sudo: false
+language: cpp
+
+addons:
+  apt:
+    sources:
+      - sourceline: 'ppa:ubuntu-toolchain-r/test'
+    packages:
+      - g++-6
+      - git
+
+before_install:
+  # Set the extra prefix for external libraries and tools
+  - export EXTRA_DIR="$PWD/extra"
+  - mkdir -p "$EXTRA_DIR"
+  - pushd "$EXTRA_DIR"
+  # Set the prefix used to install googletest, set the source
+  # directory and get the source code
+  - export GTEST_DIR="$EXTRA_DIR/googletest"
+  - export GTEST_SRC_DIR="$GTEST_DIR/source"
+  - mkdir -p "$GTEST_DIR" "$GTEST_SRC_DIR"
+  - pushd "$GTEST_SRC_DIR"
+  - git clone --depth 1 'https://github.com/google/googletest.git' -b v1.8.x .
+  # Exit gtest
+  - popd
+  # Get boost
+  - wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
+  - tar -xzf boost_1_69_0.tar.gz
+  - rm boost_1_69_0.tar.gz
+  - export BOOST_DIR="$EXTRA_DIR/boost"
+  - mv "boost_1_69_0/boost" "$BOOST_DIR"
+  # No need to exit boost
+  # Get EX3
+  - export EX3_DIR="$EXTRA_DIR/ex3"
+  - mkdir -p "$EX3_DIR"
+  - pushd "$EX3_DIR"
+  - git clone --depth 1 'https://github.com/Caian/ex3' -b master .
+  # Exit EX3
+  - popd
+  # Exit extra
+  - popd
+
+before_script:
+  # Build and install googletest
+  - pushd "$GTEST_SRC_DIR"
+  - cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$GTEST_DIR" .
+  - make -j
+  - make install
+  - popd
+
+script:
+  # Save some directories
+  - export PROJECT_DIR="$PWD"
+  - export TEST_SRC_DIR="$PROJECT_DIR/test"
+  - export BUILD_DIR="$PROJECT_DIR/build"
+  # Print some information
+  - echo "Current dir is $PWD"
+  - echo "GTest dir is $GTEST_DIR"
+  - echo "Boost dir is $BOOST_DIR"
+  - echo "Ex3 dir is $EX3_DIR"
+  # Set compiler
+  - export CXX=/usr/bin/g++-6
+  # Set compiler flags
+  - export CXXFLAGS="-std=c++98 -O0 -g -Wall -Wextra -Wconversion"
+  - export CXXFLAGS="$CXXFLAGS -I$PROJECT_DIR/.."
+  - export CXXFLAGS="$CXXFLAGS -I$GTEST_DIR/include"
+  - export CXXFLAGS="$CXXFLAGS -I$EXTRA_DIR"
+  # Set linker flags
+  - export LDFLAGS="-rdynamic -lgtest_main -lgtest -lpthread -ldl -L$GTEST_DIR/lib"
+  # Set coverage flags
+  - export COVFLAGS="--coverage"
+  # Build and run the tests
+  - chmod +x ./test/build_and_test.sh
+  - ./test/build_and_test.sh
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
