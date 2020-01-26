@@ -94,7 +94,7 @@ after_success:
   - $LCOV --remove "$COVERAGE_FILE" "/usr*" "$TEST_SRC_DIR/*" "$EXTRA_DIR/*" -o "$COVERAGE_FILE"
   # Remove the original coverage files so
   # they won't interfere with the upload
-  find . -name "*.gcno" -exec rm {} \;
-  find . -name "*.gcda" -exec rm {} \;
+  - find . -name "*.gcno" -exec rm {} \;
+  - find . -name "*.gcda" -exec rm {} \;
   # Upload the data
   - bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
