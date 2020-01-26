@@ -24,6 +24,15 @@ before_install:
   - git clone --depth 1 'https://github.com/google/googletest.git' -b v1.8.x .
   # Exit gtest
   - popd
+  # Get LLCOV
+  - export LCOV_DIR="$EXTRA_DIR/lcov"
+  - mkdir -p "$LCOV_DIR"
+  - pushd "$LCOV_DIR"
+  - wget https://github.com/linux-test-project/lcov/archive/v1.12.zip
+  - unzip v1.12.zip
+  - LCOV="$PWD/lcov-1.12/bin/lcov --gcov-tool gcov-6"
+  # Exit LLCOV
+  - popd
   # Get boost
   - wget https://dl.bintray.com/boostorg/release/1.69.0/source/boost_1_69_0.tar.gz
   - tar -xzf boost_1_69_0.tar.gz
@@ -76,4 +85,16 @@ script:
   - ./test/build_and_test.sh
 
 after_success:
+  # Set the coverage file name for lcov
+  - export COVERAGE_FILE="$PWD/coverage.info"
+  # Run lcov on the generated coverage data
+  - $LCOV --directory "$BUILD_DIR" --base-directory "$PROJECT_DIR" --capture --output-file "$COVERAGE_FILE"
+  # Keep only the project headers in the coverage data by
+  # removing the tests themselves and the extra libraries
+  - $LCOV --remove "$COVERAGE_FILE" "/usr*" "$TEST_SRC_DIR/*" "$EXTRA_DIR/*" -o "$COVERAGE_FILE"
+  # Remove the original coverage files so
+  # they won't interfere with the upload
+  find . -name "*.gcno" -exec rm {} \;
+  find . -name "*.gcda" -exec rm {} \;
+  # Upload the data
   - bash <(curl -s https://codecov.io/bash) || echo "Codecov did not collect coverage reports"
