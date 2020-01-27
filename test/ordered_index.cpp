@@ -251,6 +251,43 @@ S1B_TEST(Size)
     }
 }
 
+S1B_TEST(IndexId)
+
+    static const size_t initial_size = 1024;
+    static const size_t size_increment = 1024*1024;
+
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        test_index index(s1b_file_name, metadata,
+            initial_size, 1, size_increment);
+
+        ASSERT_STREQ("s1b::managed_index/s1b::indexing::ordered_index/"
+            "test_key", index.get_index_id());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
 S1B_TEST(AlwaysReadOnly)
 
     static const size_t initial_size = 1024;
