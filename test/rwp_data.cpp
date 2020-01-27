@@ -504,6 +504,70 @@ S1B_TEST(OpenWriteExistingNonEmpty10SlotsMapped)
     _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 10);
 }
 
+S1B_TEST(Filename)
+
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+
+        ASSERT_STREQ(s1b_file_name, data.filename().c_str());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(SizeAndSlotSize)
+
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 3);
+
+        ASSERT_EQ(3 * data.slot_size(), data.get_size());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
 S1B_TEST(OpenEmptyAndPush)
 
     std::vector<char> test_data;
