@@ -275,7 +275,7 @@ public:
         _buffer.write(data, size);
 
         const foffset_t total_size = position + size;
-        const foffset_t total_aligned = mem_align::size<Align>(size);
+        const foffset_t total_aligned = mem_align::size<Align>(total_size);
 
         if (total_aligned > total_size)
         {
