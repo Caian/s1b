@@ -268,7 +268,16 @@ public:
                 << file_name_ei(filename()));
         }
 
-        const foffset_t position = mem_align::size<Align>(get_size());
+        const foffset_t position = get_size();
+
+        if (!mem_align::is_aligned<Align>(position))
+        {
+            EX3_THROW(misaligned_exception()
+                << file_size_ei(position)
+                << expected_alignment_ei(
+                    static_cast<foffset_t>(Align))
+                << file_name_ei(filename()));
+        }
 
         // TODO assert seek returns
         _buffer.seek(position);

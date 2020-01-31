@@ -649,6 +649,32 @@ S1B_TEST(OpenEmptyAndPushReadWrite)
     }
 }
 
+S1B_TEST(PushMisaligned)
+
+    std::vector<char> test_data;
+    s1b::foffset_t prev_off = -1;
+    s1b::foffset_t off;
+
+    try
+    {
+        s1b::rwp_data data(s1b_file_name);
+        ASSERT_TRUE(data.can_write());
+        ASSERT_EQ(1, data.num_slots());
+        test_data.resize(64);
+        ASSERT_NO_THROW(data.write(&test_data[0], 0, 3));
+        ASSERT_EQ(3, data.get_size());
+        ASSERT_THROW(data.push(&test_data[0], test_data.size()),
+            s1b::misaligned_exception);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
 S1B_TEST(ReadWriteMultipleSlotFromMetadata)
 
     std::vector<test_metadata> meta_vector;
