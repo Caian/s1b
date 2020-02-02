@@ -419,6 +419,93 @@ S1B_TEST(PushOnNewFile)
     }
 }
 
+S1B_TEST(PushFixedOnWriteableFile)
+
+    // Create the file beforehand.
+    ASSERT_NO_THROW(test_rwp_metadata metadata(s1b_file_name));
+
+    try
+    {
+        test_metadata meta;
+        s1b::foffset_t offset;
+        s1b::foffset_t size, size2;
+        initialize_metadata::small_1(meta);
+
+        test_rwp_metadata metadata(s1b_file_name, true);
+        ASSERT_TRUE(metadata.can_write());
+        ASSERT_EQ(s1b::FirstUID + 0, metadata.push_element_fixed(
+            meta, 0, size));
+        ASSERT_THROW(metadata.push_element_fixed(meta, 0),
+            s1b::data_offset_overlap_exception);
+        ASSERT_THROW(metadata.push_element_fixed(meta, 0, size2),
+            s1b::data_offset_overlap_exception);
+        offset += size;
+        ASSERT_EQ(s1b::FirstUID + 1, metadata.push_element_fixed(
+            meta, offset, size));
+        // Should also work unaligned
+        offset += 10 * size;
+        if (offset % 2 == 0)
+            offset++;
+        ASSERT_EQ(s1b::FirstUID + 2, metadata.push_element_fixed(
+            meta, offset));
+        ASSERT_THROW(metadata.push_element_fixed(meta, offset / 2),
+            s1b::data_offset_overlap_exception);
+        ASSERT_EQ(s1b::FirstUID + 2, metadata.get_last_uid());
+        ASSERT_NO_THROW(metadata.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(PushFixedOnNewFile)
+
+    static const s1b::uid_t uid_0 = s1b::FirstUID + 0;
+    static const s1b::uid_t uid_1 = s1b::FirstUID + 1;
+    static const s1b::uid_t uid_2 = s1b::FirstUID + 2;
+
+    try
+    {
+        test_metadata meta;
+        s1b::foffset_t offset;
+        s1b::foffset_t size, size2;
+        initialize_metadata::small_1(meta);
+
+        test_rwp_metadata metadata(s1b_file_name);
+        ASSERT_TRUE(metadata.can_write());
+        ASSERT_EQ(s1b::FirstUID + 0, metadata.push_element_fixed(
+            meta, 0, size));
+        ASSERT_THROW(metadata.push_element_fixed(meta, 0),
+            s1b::data_offset_overlap_exception);
+        ASSERT_THROW(metadata.push_element_fixed(meta, 0, size2),
+            s1b::data_offset_overlap_exception);
+        offset += size;
+        ASSERT_EQ(s1b::FirstUID + 1, metadata.push_element_fixed(
+            meta, offset, size));
+        // Should also work unaligned
+        offset += 10 * size;
+        if (offset % 2 == 0)
+            offset++;
+        ASSERT_EQ(s1b::FirstUID + 2, metadata.push_element_fixed(
+            meta, offset));
+        ASSERT_THROW(metadata.push_element_fixed(meta, offset / 2),
+            s1b::data_offset_overlap_exception);
+        ASSERT_EQ(s1b::FirstUID + 2, metadata.get_last_uid());
+        ASSERT_NO_THROW(metadata.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
 S1B_TEST(ReadOnReadOnlyFile)
 
     static const s1b::uid_t uid_0 = s1b::FirstUID + 0;

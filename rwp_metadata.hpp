@@ -303,6 +303,50 @@ private:
         return last_data_offset + base_type::compute_aligned_data_size(size);
     }
 
+    s1b::uid_t push_element(
+        const metadata_type& meta,
+        foffset_t& data_offset,
+        foffset_t& data_size,
+        bool force_data_offset
+    )
+    {
+        s1b::uid_t last_uid;
+        const foffset_t curr_data_offset = get_data_size(last_uid);
+
+        if (force_data_offset)
+        {
+            if (data_offset < curr_data_offset)
+            {
+                EX3_THROW(data_offset_overlap_exception()
+                    << file_size_ei(curr_data_offset)
+                    << offset_ei(data_offset)
+                    << file_name_ei(filename()));
+            }
+        }
+        else
+        {
+            data_offset = curr_data_offset;
+        }
+
+        const s1b::uid_t uid = last_uid + 1;
+
+        file_metadata_type elem(meta);
+
+        elem.data_offset = data_offset;
+        elem.clean_bit = 0;
+
+        base_type::meta_adapter().set_uid(elem, uid);
+
+        _buffer.seek(base_type::get_element_offset_unsafe(uid));
+        _buffer.write_object(elem);
+
+        align_file(uid);
+
+        data_size = base_type::meta_adapter().get_data_size(elem);
+
+        return uid;
+    }
+
 public:
 
     rwp_metadata(
@@ -478,30 +522,11 @@ public:
 
     s1b::uid_t push_element(
         const metadata_type& meta,
-        foffset_t& data_offset, // TODO add data_offset_hint or use_given_data_offset
+        foffset_t& data_offset,
         foffset_t& data_size
     )
     {
-        s1b::uid_t last_uid;
-        data_offset = get_data_size(last_uid);
-
-        const s1b::uid_t uid = last_uid + 1;
-
-        file_metadata_type elem(meta);
-
-        elem.data_offset = data_offset;
-        elem.clean_bit = 0;
-
-        base_type::meta_adapter().set_uid(elem, uid);
-
-        _buffer.seek(base_type::get_element_offset_unsafe(uid));
-        _buffer.write_object(elem);
-
-        align_file(uid);
-
-        data_size = base_type::meta_adapter().get_data_size(elem);
-
-        return uid;
+        return push_element(meta, data_offset, data_size, false);
     }
 
     s1b::uid_t push_element(
@@ -519,6 +544,24 @@ public:
     {
         foffset_t data_offset;
         return push_element(meta, data_offset);
+    }
+
+    s1b::uid_t push_element_fixed(
+        const metadata_type& meta,
+        foffset_t data_offset,
+        foffset_t& data_size
+    )
+    {
+        return push_element(meta, data_offset, data_size, true);
+    }
+
+    s1b::uid_t push_element_fixed(
+        const metadata_type& meta,
+        foffset_t data_offset
+    )
+    {
+        foffset_t data_size;
+        return push_element_fixed(meta, data_offset, data_size);
     }
 
     s1b::uid_t get_last_uid(
