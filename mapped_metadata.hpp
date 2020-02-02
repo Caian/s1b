@@ -412,7 +412,7 @@ public:
         return iterators::uid_iterator(get_last_uid() + 1);
     }
 
-    const foffset_t get_data_size(
+    foffset_t get_data_size(
     ) const
     {
         // Get the data offset and size of the last element and compute the

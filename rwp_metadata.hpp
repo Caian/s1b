@@ -281,7 +281,7 @@ private:
         }
     }
 
-    const foffset_t get_data_size(
+    foffset_t get_data_size(
         s1b::uid_t& last_uid
     )
     {
@@ -590,7 +590,7 @@ public:
         return iterators::uid_iterator(get_last_uid() + 1);
     }
 
-    const foffset_t get_data_size(
+    foffset_t get_data_size(
     )
     {
         s1b::uid_t last_uid;
