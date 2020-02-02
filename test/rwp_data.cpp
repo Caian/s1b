@@ -652,8 +652,6 @@ S1B_TEST(OpenEmptyAndPushReadWrite)
 S1B_TEST(PushMisaligned)
 
     std::vector<char> test_data;
-    s1b::foffset_t prev_off = -1;
-    s1b::foffset_t off;
 
     try
     {
