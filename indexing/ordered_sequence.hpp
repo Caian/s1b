@@ -37,9 +37,9 @@ class ordered_sequence
 {
 public:
 
-    typedef s1b::uid_t index_type;
+    typedef s1b::uid_t indexed_type;
 
-    typedef const index_type* walk_iterator;
+    typedef const indexed_type* walk_iterator;
 
 private:
 
@@ -49,11 +49,11 @@ private:
         managed_allocator;
 
     typedef typename managed_allocator::template rebind<
-        index_type
+        indexed_type
         >::other index_allocator;
 
     typedef boost::interprocess::offset_ptr<
-        const index_type
+        const indexed_type
         > index_ptr;
 
 private:
@@ -74,7 +74,7 @@ private:
         }
 
         std::pair<Key, s1b::uid_t> make_index(
-            const index_type& i
+            const indexed_type& i
         ) const
         {
             ITM it = _metadata_begin;
@@ -84,8 +84,8 @@ private:
         }
 
         bool operator ()(
-            const index_type& first,
-            const index_type& second
+            const indexed_type& first,
+            const indexed_type& second
         ) const
         {
             return make_index(first) < make_index(second);
@@ -117,7 +117,7 @@ public:
         // Create a temporary pointer that is not const
 
         typedef boost::interprocess::offset_ptr<
-            index_type
+            indexed_type
             > tmp_index_ptr;
 
         // Allocate the vector of indices

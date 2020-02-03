@@ -79,12 +79,12 @@ public:
         CoordSys
         > spatial_point_type;
 
-    typedef std::pair<spatial_point_type, s1b::uid_t> index_type;
+    typedef std::pair<spatial_point_type, s1b::uid_t> indexed_type;
 
-    typedef boost::geometry::index::equal_to<index_type> equal_to_t;
+    typedef boost::geometry::index::equal_to<indexed_type> equal_to_t;
 
     typedef typename Allocator::template rebind<
-        index_type
+        indexed_type
         >::other allocator_t;
 
     typedef iterators::transforms::get_first_by_val<
@@ -92,7 +92,7 @@ public:
         > indexable_t;
 
     typedef boost::geometry::index::rtree<
-        index_type,
+        indexed_type,
         params_t,
         indexable_t,
         equal_to_t,

@@ -46,7 +46,7 @@ typedef test_rtree_index::walk_iterator test_walk_iterator;
 typedef test_rtree_index::query_iterator test_query_iterator;
 typedef s1b::managed_index<test_rtree_index> test_index;
 
-static const size_t idxsz = 2*sizeof(test_rtree_index::index_type);
+static const size_t idxsz = 2*sizeof(test_rtree_index::indexed_type);
 
 struct NoException { };
 

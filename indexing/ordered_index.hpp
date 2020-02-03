@@ -39,10 +39,10 @@ class ordered_index
 {
 public:
 
-    typedef std::pair<Key, s1b::uid_t> index_type;
+    typedef std::pair<Key, s1b::uid_t> indexed_type;
 
-    typedef const index_type* walk_iterator;
-    typedef const index_type* query_iterator;
+    typedef const indexed_type* walk_iterator;
+    typedef const indexed_type* query_iterator;
 
 private:
 
@@ -52,11 +52,11 @@ private:
         managed_allocator;
 
     typedef typename managed_allocator::template rebind<
-        index_type
+        indexed_type
         >::other index_allocator;
 
     typedef boost::interprocess::offset_ptr<
-        const index_type
+        const indexed_type
         > index_ptr;
 
 private:
@@ -64,8 +64,8 @@ private:
     struct compare_lt
     {
         bool operator ()(
-            const index_type& first,
-            const index_type& second
+            const indexed_type& first,
+            const indexed_type& second
         ) const
         {
             return first.first < second.first;
@@ -97,7 +97,7 @@ public:
         // Create a temporary pointer that is not const
 
         typedef boost::interprocess::offset_ptr<
-            index_type
+            indexed_type
             > tmp_index_ptr;
 
         // Allocate the vector of indices
@@ -151,7 +151,7 @@ public:
         return _p_indices.get() + _num_indices;
     }
 
-    std::pair<index_type, index_type> range(
+    std::pair<indexed_type, indexed_type> range(
     ) const
     {
         walk_iterator first = begin();
@@ -169,11 +169,11 @@ public:
     }
 
     void range(
-        index_type& index_min,
-        index_type& index_max
+        indexed_type& index_min,
+        indexed_type& index_max
     ) const
     {
-        std::pair<index_type, index_type> minmax = range();
+        std::pair<indexed_type, indexed_type> minmax = range();
         index_min = minmax.first;
         index_max = minmax.second;
     }
@@ -189,8 +189,8 @@ public:
         walk_iterator ibegin = this->begin();
         walk_iterator iend = this->end();
 
-        const index_type point_min(predicates.point_min, s1b::uid_t());
-        const index_type point_max(predicates.point_max, s1b::uid_t());
+        const indexed_type point_min(predicates.point_min, s1b::uid_t());
+        const indexed_type point_max(predicates.point_max, s1b::uid_t());
 
         begin = std::lower_bound(ibegin, iend, point_min, compare);
         end = std::upper_bound(begin, iend, point_max, compare);
