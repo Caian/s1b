@@ -23,6 +23,7 @@
 #include "s1b_test.hpp"
 #include "index_test.hpp"
 
+#include <s1b/traits/indexed_type.hpp>
 #include <s1b/indexing/ordered_index.hpp>
 #include <s1b/rwp_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
@@ -39,7 +40,9 @@ typedef test_ordered_index::walk_iterator test_walk_iterator;
 typedef test_ordered_index::query_iterator test_query_iterator;
 typedef s1b::managed_index<test_ordered_index> test_index;
 
-static const size_t idxsz = sizeof(test_ordered_index::indexed_type);
+static const size_t idxsz = sizeof(s1b::traits::indexed_type<
+    test_index
+    >::type);
 
 struct NoException { };
 
@@ -448,7 +451,7 @@ S1B_TEST(EmptyRange)
 
     try
     {
-        test_ordered_index::indexed_type index_min, index_max;
+        s1b::traits::indexed_type<test_index>::type index_min, index_max;
 
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
@@ -508,10 +511,10 @@ S1B_TEST(Range)
 
     try
     {
-        test_ordered_index::indexed_type index_min, index_max;
+        s1b::traits::indexed_type<test_index>::type index_min, index_max;
         std::pair<
-            test_ordered_index::indexed_type,
-            test_ordered_index::indexed_type
+            s1b::traits::indexed_type<test_index>::type,
+            s1b::traits::indexed_type<test_index>::type
             > index_pair;
 
         s1b::uid_t idx_min, idx_max;
