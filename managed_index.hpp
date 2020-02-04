@@ -31,6 +31,8 @@
 #include "iterators/rwp_metadata_iterator.hpp"
 
 #include <s1b/traits/indexed_type.hpp>
+#include <s1b/traits/walk_iterator.hpp>
+#include <s1b/traits/query_iterator.hpp>
 
 #include <boost/interprocess/offset_ptr.hpp>
 
@@ -282,6 +284,18 @@ template <typename Index>
 struct indexed_type<managed_index<Index> >
 {
     typedef typename indexed_type<Index>::type type;
+};
+
+template <typename Index>
+struct walk_iterator<managed_index<Index> >
+{
+    typedef typename walk_iterator<Index>::type type;
+};
+
+template <typename Index>
+struct query_iterator<managed_index<Index> >
+{
+    typedef typename query_iterator<Index>::type type;
 };
 
 }
