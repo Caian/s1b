@@ -30,6 +30,8 @@
 #include "iterators/mapped_metadata_iterator.hpp"
 #include "iterators/rwp_metadata_iterator.hpp"
 
+#include <s1b/traits/indexed_type.hpp>
+
 #include <boost/interprocess/offset_ptr.hpp>
 
 #include <algorithm>
@@ -272,5 +274,16 @@ public:
     {
     }
 };
+
+namespace traits
+{
+
+template <typename Index>
+struct indexed_type<managed_index<Index> >
+{
+    typedef typename indexed_type<Index>::type type;
+};
+
+}
 
 }
