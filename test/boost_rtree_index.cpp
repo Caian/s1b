@@ -24,6 +24,8 @@
 #include "rtree_index_test.hpp"
 
 #include <s1b/traits/indexed_type.hpp>
+#include <s1b/traits/walk_iterator.hpp>
+#include <s1b/traits/query_iterator.hpp>
 #include <s1b/indexing/boost_rtree_index.hpp>
 #include <s1b/rwp_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
@@ -43,9 +45,9 @@ typedef s1b::indexing::boost_rtree_index<
     coord_sys_t,
     s1b::managed_buffer::managed_allocator
     > test_rtree_index;
-typedef test_rtree_index::walk_iterator test_walk_iterator;
-typedef test_rtree_index::query_iterator test_query_iterator;
 typedef s1b::managed_index<test_rtree_index> test_index;
+typedef s1b::traits::walk_iterator<test_index>::type test_walk_iterator;
+typedef s1b::traits::query_iterator<test_index>::type test_query_iterator;
 
 static const size_t idxsz = 2*sizeof(s1b::traits::indexed_type<
     test_index

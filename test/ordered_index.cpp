@@ -24,6 +24,8 @@
 #include "index_test.hpp"
 
 #include <s1b/traits/indexed_type.hpp>
+#include <s1b/traits/walk_iterator.hpp>
+#include <s1b/traits/query_iterator.hpp>
 #include <s1b/indexing/ordered_index.hpp>
 #include <s1b/rwp_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
@@ -36,9 +38,9 @@ namespace {
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
 typedef s1b::mapped_metadata<test_adapter> test_mapped_metadata;
 typedef s1b::indexing::ordered_index<test_key> test_ordered_index;
-typedef test_ordered_index::walk_iterator test_walk_iterator;
-typedef test_ordered_index::query_iterator test_query_iterator;
 typedef s1b::managed_index<test_ordered_index> test_index;
+typedef s1b::traits::walk_iterator<test_index>::type test_walk_iterator;
+typedef s1b::traits::query_iterator<test_index>::type test_query_iterator;
 
 static const size_t idxsz = sizeof(s1b::traits::indexed_type<
     test_index

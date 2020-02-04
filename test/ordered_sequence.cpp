@@ -23,6 +23,7 @@
 #include "s1b_test.hpp"
 #include "index_test.hpp"
 
+#include <s1b/traits/walk_iterator.hpp>
 #include <s1b/indexing/ordered_sequence.hpp>
 #include <s1b/rwp_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
@@ -35,8 +36,8 @@ namespace {
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
 typedef s1b::mapped_metadata<test_adapter> test_mapped_metadata;
 typedef s1b::indexing::ordered_sequence<test_key> test_ordered_sequence;
-typedef test_ordered_sequence::walk_iterator test_walk_iterator;
 typedef s1b::managed_index<test_ordered_sequence> test_index;
+typedef s1b::traits::walk_iterator<test_index>::type test_walk_iterator;
 
 struct NoException { };
 
