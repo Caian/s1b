@@ -23,7 +23,6 @@
 #include "types.hpp"
 #include "macros.hpp"
 #include "metadata.hpp"
-#include "mem_align.hpp"
 #include "exceptions.hpp"
 #include "path_string.hpp"
 #include "mapped_buffer.hpp"
