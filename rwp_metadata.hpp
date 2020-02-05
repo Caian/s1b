@@ -310,11 +310,23 @@ private:
         bool force_data_offset
     )
     {
+        static const s1b::foffset_t Align = base_type::Align;
+
         s1b::uid_t last_uid;
         const foffset_t curr_data_offset = get_data_size(last_uid);
 
         if (force_data_offset)
         {
+            if (!mem_align::is_aligned<Align>(data_offset))
+            {
+                EX3_THROW(misaligned_exception()
+                    << file_size_ei(curr_data_offset)
+                    << offset_ei(data_offset)
+                    << expected_alignment_ei(
+                        static_cast<foffset_t>(Align))
+                    << file_name_ei(filename()));
+            }
+
             if (data_offset < curr_data_offset)
             {
                 EX3_THROW(data_offset_overlap_exception()
