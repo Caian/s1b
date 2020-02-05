@@ -439,16 +439,17 @@ S1B_TEST(PushFixedOnWriteableFile)
             s1b::data_offset_overlap_exception);
         ASSERT_THROW(metadata.push_element_fixed(meta, 0, size2),
             s1b::data_offset_overlap_exception);
-        offset += size;
+        offset = s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size) + 1;
+        ASSERT_THROW(metadata.push_element_fixed(meta, offset, size),
+            s1b::misaligned_exception);
+        offset -= 1;
         ASSERT_EQ(s1b::FirstUID + 1, metadata.push_element_fixed(
             meta, offset, size));
-        // Should also work unaligned
-        offset += 10 * size;
-        if (offset % 2 == 0)
-            offset++;
+        offset += 10 * s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size);
         ASSERT_EQ(s1b::FirstUID + 2, metadata.push_element_fixed(
             meta, offset));
-        ASSERT_THROW(metadata.push_element_fixed(meta, offset / 2),
+        ASSERT_THROW(metadata.push_element_fixed(meta,
+            s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(offset / 2)),
             s1b::data_offset_overlap_exception);
         ASSERT_EQ(s1b::FirstUID + 2, metadata.get_last_uid());
         ASSERT_NO_THROW(metadata.sync());
@@ -463,10 +464,6 @@ S1B_TEST(PushFixedOnWriteableFile)
 }
 
 S1B_TEST(PushFixedOnNewFile)
-
-    static const s1b::uid_t uid_0 = s1b::FirstUID + 0;
-    static const s1b::uid_t uid_1 = s1b::FirstUID + 1;
-    static const s1b::uid_t uid_2 = s1b::FirstUID + 2;
 
     try
     {
@@ -483,16 +480,17 @@ S1B_TEST(PushFixedOnNewFile)
             s1b::data_offset_overlap_exception);
         ASSERT_THROW(metadata.push_element_fixed(meta, 0, size2),
             s1b::data_offset_overlap_exception);
-        offset += size;
+        offset = s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size) + 1;
+        ASSERT_THROW(metadata.push_element_fixed(meta, offset, size),
+            s1b::misaligned_exception);
+        offset -= 1;
         ASSERT_EQ(s1b::FirstUID + 1, metadata.push_element_fixed(
             meta, offset, size));
-        // Should also work unaligned
-        offset += 10 * size;
-        if (offset % 2 == 0)
-            offset++;
+        offset += 10 * s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size);
         ASSERT_EQ(s1b::FirstUID + 2, metadata.push_element_fixed(
             meta, offset));
-        ASSERT_THROW(metadata.push_element_fixed(meta, offset / 2),
+        ASSERT_THROW(metadata.push_element_fixed(meta,
+            s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(offset / 2)),
             s1b::data_offset_overlap_exception);
         ASSERT_EQ(s1b::FirstUID + 2, metadata.get_last_uid());
         ASSERT_NO_THROW(metadata.sync());
