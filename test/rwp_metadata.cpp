@@ -313,8 +313,8 @@ S1B_TEST(ReadNothing)
 
         test_rwp_metadata metadata(s1b_file_name, false);
         ASSERT_FALSE(metadata.can_write());
-        ASSERT_FALSE(metadata.read_element(s1b::FirstUID, meta));
-        ASSERT_FALSE(metadata.read_element(s1b::FirstUID, meta, offset));
+        ASSERT_FALSE(metadata.read(s1b::FirstUID, meta));
+        ASSERT_FALSE(metadata.read(s1b::FirstUID, meta, offset));
         ASSERT_FALSE(metadata.read_data_offset(s1b::FirstUID, offset));
         meta.uid = s1b::FirstUID;
         ASSERT_THROW(metadata.read_data_offset(meta),
@@ -343,11 +343,11 @@ S1B_TEST(PushOnReadOnlyFile)
 
         test_rwp_metadata metadata(s1b_file_name, false);
         ASSERT_FALSE(metadata.can_write());
-        ASSERT_THROW(metadata.push_element(meta),
+        ASSERT_THROW(metadata.push(meta),
             s1b::read_only_exception);
-        ASSERT_THROW(metadata.push_element(meta, offset),
+        ASSERT_THROW(metadata.push(meta, offset),
             s1b::read_only_exception);
-        ASSERT_THROW(metadata.push_element(meta, offset, size),
+        ASSERT_THROW(metadata.push(meta, offset, size),
             s1b::read_only_exception);
         ASSERT_NO_THROW(metadata.sync());
     }
@@ -374,9 +374,9 @@ S1B_TEST(PushOnWriteableFile)
 
         test_rwp_metadata metadata(s1b_file_name, true);
         ASSERT_TRUE(metadata.can_write());
-        ASSERT_EQ(s1b::FirstUID + 0, metadata.push_element(meta));
-        ASSERT_EQ(s1b::FirstUID + 1, metadata.push_element(meta, offset));
-        ASSERT_EQ(s1b::FirstUID + 2, metadata.push_element(meta, offset, size));
+        ASSERT_EQ(s1b::FirstUID + 0, metadata.push(meta));
+        ASSERT_EQ(s1b::FirstUID + 1, metadata.push(meta, offset));
+        ASSERT_EQ(s1b::FirstUID + 2, metadata.push(meta, offset, size));
         ASSERT_EQ(s1b::FirstUID + 2, metadata.get_last_uid());
         ASSERT_NO_THROW(metadata.sync());
     }
@@ -404,9 +404,9 @@ S1B_TEST(PushOnNewFile)
 
         test_rwp_metadata metadata(s1b_file_name);
         ASSERT_TRUE(metadata.can_write());
-        ASSERT_EQ(uid_0, metadata.push_element(meta));
-        ASSERT_EQ(uid_1, metadata.push_element(meta, offset));
-        ASSERT_EQ(uid_2, metadata.push_element(meta, offset, size));
+        ASSERT_EQ(uid_0, metadata.push(meta));
+        ASSERT_EQ(uid_1, metadata.push(meta, offset));
+        ASSERT_EQ(uid_2, metadata.push(meta, offset, size));
         ASSERT_EQ(uid_2, metadata.get_last_uid());
         ASSERT_NO_THROW(metadata.sync());
     }
@@ -433,22 +433,22 @@ S1B_TEST(PushFixedOnWriteableFile)
 
         test_rwp_metadata metadata(s1b_file_name, true);
         ASSERT_TRUE(metadata.can_write());
-        ASSERT_EQ(s1b::FirstUID + 0, metadata.push_element_fixed(
+        ASSERT_EQ(s1b::FirstUID + 0, metadata.push_fixed(
             meta, 0, size));
-        ASSERT_THROW(metadata.push_element_fixed(meta, 0),
+        ASSERT_THROW(metadata.push_fixed(meta, 0),
             s1b::data_offset_overlap_exception);
-        ASSERT_THROW(metadata.push_element_fixed(meta, 0, size2),
+        ASSERT_THROW(metadata.push_fixed(meta, 0, size2),
             s1b::data_offset_overlap_exception);
         offset = s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size) + 1;
-        ASSERT_THROW(metadata.push_element_fixed(meta, offset, size),
+        ASSERT_THROW(metadata.push_fixed(meta, offset, size),
             s1b::misaligned_exception);
         offset -= 1;
-        ASSERT_EQ(s1b::FirstUID + 1, metadata.push_element_fixed(
+        ASSERT_EQ(s1b::FirstUID + 1, metadata.push_fixed(
             meta, offset, size));
         offset += 10 * s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size);
-        ASSERT_EQ(s1b::FirstUID + 2, metadata.push_element_fixed(
+        ASSERT_EQ(s1b::FirstUID + 2, metadata.push_fixed(
             meta, offset));
-        ASSERT_THROW(metadata.push_element_fixed(meta,
+        ASSERT_THROW(metadata.push_fixed(meta,
             s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(offset / 2)),
             s1b::data_offset_overlap_exception);
         ASSERT_EQ(s1b::FirstUID + 2, metadata.get_last_uid());
@@ -474,22 +474,22 @@ S1B_TEST(PushFixedOnNewFile)
 
         test_rwp_metadata metadata(s1b_file_name);
         ASSERT_TRUE(metadata.can_write());
-        ASSERT_EQ(s1b::FirstUID + 0, metadata.push_element_fixed(
+        ASSERT_EQ(s1b::FirstUID + 0, metadata.push_fixed(
             meta, 0, size));
-        ASSERT_THROW(metadata.push_element_fixed(meta, 0),
+        ASSERT_THROW(metadata.push_fixed(meta, 0),
             s1b::data_offset_overlap_exception);
-        ASSERT_THROW(metadata.push_element_fixed(meta, 0, size2),
+        ASSERT_THROW(metadata.push_fixed(meta, 0, size2),
             s1b::data_offset_overlap_exception);
         offset = s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size) + 1;
-        ASSERT_THROW(metadata.push_element_fixed(meta, offset, size),
+        ASSERT_THROW(metadata.push_fixed(meta, offset, size),
             s1b::misaligned_exception);
         offset -= 1;
-        ASSERT_EQ(s1b::FirstUID + 1, metadata.push_element_fixed(
+        ASSERT_EQ(s1b::FirstUID + 1, metadata.push_fixed(
             meta, offset, size));
         offset += 10 * s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(size);
-        ASSERT_EQ(s1b::FirstUID + 2, metadata.push_element_fixed(
+        ASSERT_EQ(s1b::FirstUID + 2, metadata.push_fixed(
             meta, offset));
-        ASSERT_THROW(metadata.push_element_fixed(meta,
+        ASSERT_THROW(metadata.push_fixed(meta,
             s1b::mem_align::size<S1B_DATA_ALIGNMENT_BYTES>(offset / 2)),
             s1b::data_offset_overlap_exception);
         ASSERT_EQ(s1b::FirstUID + 2, metadata.get_last_uid());
@@ -524,9 +524,9 @@ S1B_TEST(ReadOnReadOnlyFile)
         meta_ref_2.uid = uid_1;
         initialize_metadata::small_3(meta_ref_3);
         meta_ref_3.uid = uid_2;
-        ASSERT_EQ(uid_0, metadata.push_element(meta_ref_1));
-        ASSERT_EQ(uid_1, metadata.push_element(meta_ref_2));
-        ASSERT_EQ(uid_2, metadata.push_element(meta_ref_3));
+        ASSERT_EQ(uid_0, metadata.push(meta_ref_1));
+        ASSERT_EQ(uid_1, metadata.push(meta_ref_2));
+        ASSERT_EQ(uid_2, metadata.push(meta_ref_3));
     }
     catch (const std::exception& e)
     {
@@ -543,14 +543,14 @@ S1B_TEST(ReadOnReadOnlyFile)
 
         test_rwp_metadata metadata(s1b_file_name, false);
         ASSERT_FALSE(metadata.can_write());
-        ASSERT_TRUE(metadata.read_element(uid_0, meta, offset));
+        ASSERT_TRUE(metadata.read(uid_0, meta, offset));
         ASSERT_TRUE(meta_ref_1 == meta);
-        ASSERT_TRUE(metadata.read_element(uid_1, meta, offset));
+        ASSERT_TRUE(metadata.read(uid_1, meta, offset));
         ASSERT_TRUE(meta_ref_2 == meta);
-        ASSERT_TRUE(metadata.read_element(uid_2, meta));
+        ASSERT_TRUE(metadata.read(uid_2, meta));
         ASSERT_TRUE(meta_ref_3 == meta);
-        ASSERT_FALSE(metadata.read_element(uid_3, meta));
-        ASSERT_FALSE(metadata.read_element(uid_3, meta, offset));
+        ASSERT_FALSE(metadata.read(uid_3, meta));
+        ASSERT_FALSE(metadata.read(uid_3, meta, offset));
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -587,18 +587,18 @@ S1B_TEST(ReadOnWriteableFile)
         meta_ref_2.uid = uid_1;
         initialize_metadata::small_3(meta_ref_3);
         meta_ref_3.uid = uid_2;
-        ASSERT_EQ(uid_0, metadata.push_element(meta_ref_1));
-        ASSERT_EQ(uid_1, metadata.push_element(meta_ref_2));
-        ASSERT_EQ(uid_2, metadata.push_element(meta_ref_3));
+        ASSERT_EQ(uid_0, metadata.push(meta_ref_1));
+        ASSERT_EQ(uid_1, metadata.push(meta_ref_2));
+        ASSERT_EQ(uid_2, metadata.push(meta_ref_3));
         ASSERT_TRUE(metadata.can_write());
-        ASSERT_TRUE(metadata.read_element(uid_0, meta, offset));
+        ASSERT_TRUE(metadata.read(uid_0, meta, offset));
         ASSERT_TRUE(meta_ref_1 == meta);
-        ASSERT_TRUE(metadata.read_element(uid_1, meta, offset));
+        ASSERT_TRUE(metadata.read(uid_1, meta, offset));
         ASSERT_TRUE(meta_ref_2 == meta);
-        ASSERT_TRUE(metadata.read_element(uid_2, meta));
+        ASSERT_TRUE(metadata.read(uid_2, meta));
         ASSERT_TRUE(meta_ref_3 == meta);
-        ASSERT_FALSE(metadata.read_element(uid_3, meta));
-        ASSERT_FALSE(metadata.read_element(uid_3, meta, offset));
+        ASSERT_FALSE(metadata.read(uid_3, meta));
+        ASSERT_FALSE(metadata.read(uid_3, meta, offset));
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -633,18 +633,18 @@ S1B_TEST(ReadOnNewFile)
         meta_ref_2.uid = uid_1;
         initialize_metadata::small_3(meta_ref_3);
         meta_ref_3.uid = uid_2;
-        ASSERT_EQ(uid_0, metadata.push_element(meta_ref_1));
-        ASSERT_EQ(uid_1, metadata.push_element(meta_ref_2));
-        ASSERT_EQ(uid_2, metadata.push_element(meta_ref_3));
+        ASSERT_EQ(uid_0, metadata.push(meta_ref_1));
+        ASSERT_EQ(uid_1, metadata.push(meta_ref_2));
+        ASSERT_EQ(uid_2, metadata.push(meta_ref_3));
         ASSERT_TRUE(metadata.can_write());
-        ASSERT_TRUE(metadata.read_element(uid_0, meta, offset));
+        ASSERT_TRUE(metadata.read(uid_0, meta, offset));
         ASSERT_TRUE(meta_ref_1 == meta);
-        ASSERT_TRUE(metadata.read_element(uid_1, meta, offset));
+        ASSERT_TRUE(metadata.read(uid_1, meta, offset));
         ASSERT_TRUE(meta_ref_2 == meta);
-        ASSERT_TRUE(metadata.read_element(uid_2, meta));
+        ASSERT_TRUE(metadata.read(uid_2, meta));
         ASSERT_TRUE(meta_ref_3 == meta);
-        ASSERT_FALSE(metadata.read_element(uid_3, meta));
-        ASSERT_FALSE(metadata.read_element(uid_3, meta, offset));
+        ASSERT_FALSE(metadata.read(uid_3, meta));
+        ASSERT_FALSE(metadata.read(uid_3, meta, offset));
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -679,9 +679,9 @@ S1B_TEST(WriteOnReadOnlyFile)
         meta_ref_3.uid = uid_2;
         initialize_metadata::small_1(meta_ref_4);
         meta_ref_4.uid = uid_3;
-        ASSERT_EQ(uid_0, metadata.push_element(meta_ref_1));
-        ASSERT_EQ(uid_1, metadata.push_element(meta_ref_2));
-        ASSERT_EQ(uid_2, metadata.push_element(meta_ref_3));
+        ASSERT_EQ(uid_0, metadata.push(meta_ref_1));
+        ASSERT_EQ(uid_1, metadata.push(meta_ref_2));
+        ASSERT_EQ(uid_2, metadata.push(meta_ref_3));
     }
     catch (const std::exception& e)
     {
@@ -695,13 +695,13 @@ S1B_TEST(WriteOnReadOnlyFile)
     {
         test_rwp_metadata metadata(s1b_file_name, false);
         ASSERT_FALSE(metadata.can_write());
-        ASSERT_THROW(metadata.write_element(meta_ref_1),
+        ASSERT_THROW(metadata.write(meta_ref_1),
             s1b::read_only_exception);
-        ASSERT_THROW(metadata.write_element(meta_ref_2),
+        ASSERT_THROW(metadata.write(meta_ref_2),
             s1b::read_only_exception);
-        ASSERT_THROW(metadata.write_element(meta_ref_3),
+        ASSERT_THROW(metadata.write(meta_ref_3),
             s1b::read_only_exception);
-        ASSERT_THROW(metadata.write_element(meta_ref_4),
+        ASSERT_THROW(metadata.write(meta_ref_4),
             s1b::io_exception);
         ASSERT_NO_THROW(metadata.sync());
     }
@@ -737,37 +737,37 @@ S1B_TEST(WriteOnWriteableFile)
         meta_ref_2.uid = uid_1;
         initialize_metadata::small_3(meta_ref_3);
         meta_ref_3.uid = uid_2;
-        ASSERT_EQ(uid_0, metadata.push_element(meta_ref_1));
-        ASSERT_EQ(uid_1, metadata.push_element(meta_ref_2));
-        ASSERT_EQ(uid_2, metadata.push_element(meta_ref_3));
+        ASSERT_EQ(uid_0, metadata.push(meta_ref_1));
+        ASSERT_EQ(uid_1, metadata.push(meta_ref_2));
+        ASSERT_EQ(uid_2, metadata.push(meta_ref_3));
         ASSERT_TRUE(metadata.can_write());
         meta_ref_1.x *= 2;
         meta_ref_1.y *= 2;
         meta_ref_1.value1 *= 2;
         meta_ref_1.value2 *= 2;
-        ASSERT_NO_THROW(metadata.write_element(meta_ref_1));
+        ASSERT_NO_THROW(metadata.write(meta_ref_1));
         meta_ref_2.x *= 2;
         meta_ref_2.y *= 2;
         meta_ref_2.value1 *= 2;
         meta_ref_2.value2 *= 2;
-        ASSERT_NO_THROW(metadata.write_element(meta_ref_2));
+        ASSERT_NO_THROW(metadata.write(meta_ref_2));
         meta_ref_3.x *= 2;
         meta_ref_3.y *= 2;
         meta_ref_3.value1 *= 2;
         meta_ref_3.value2 *= 2;
-        ASSERT_NO_THROW(metadata.write_element(meta_ref_3));
+        ASSERT_NO_THROW(metadata.write(meta_ref_3));
         initialize_metadata::small_1(meta_ref_4);
         meta_ref_4.uid = uid_3;
-        ASSERT_THROW(metadata.write_element(meta_ref_4),
+        ASSERT_THROW(metadata.write(meta_ref_4),
             s1b::io_exception);
         meta_ref_1.size *= 2;
-        ASSERT_THROW(metadata.write_element(meta_ref_1),
+        ASSERT_THROW(metadata.write(meta_ref_1),
             s1b::element_mismatch_exception);
         meta_ref_2.size *= 2;
-        ASSERT_THROW(metadata.write_element(meta_ref_2),
+        ASSERT_THROW(metadata.write(meta_ref_2),
             s1b::element_mismatch_exception);
         meta_ref_3.size *= 2;
-        ASSERT_THROW(metadata.write_element(meta_ref_3),
+        ASSERT_THROW(metadata.write(meta_ref_3),
             s1b::element_mismatch_exception);
         ASSERT_NO_THROW(metadata.sync());
     }
@@ -801,37 +801,37 @@ S1B_TEST(WriteOnNewFile)
         meta_ref_2.uid = uid_1;
         initialize_metadata::small_3(meta_ref_3);
         meta_ref_3.uid = uid_2;
-        ASSERT_EQ(uid_0, metadata.push_element(meta_ref_1));
-        ASSERT_EQ(uid_1, metadata.push_element(meta_ref_2));
-        ASSERT_EQ(uid_2, metadata.push_element(meta_ref_3));
+        ASSERT_EQ(uid_0, metadata.push(meta_ref_1));
+        ASSERT_EQ(uid_1, metadata.push(meta_ref_2));
+        ASSERT_EQ(uid_2, metadata.push(meta_ref_3));
         ASSERT_TRUE(metadata.can_write());
         meta_ref_1.x *= 2;
         meta_ref_1.y *= 2;
         meta_ref_1.value1 *= 2;
         meta_ref_1.value2 *= 2;
-        ASSERT_NO_THROW(metadata.write_element(meta_ref_1));
+        ASSERT_NO_THROW(metadata.write(meta_ref_1));
         meta_ref_2.x *= 2;
         meta_ref_2.y *= 2;
         meta_ref_2.value1 *= 2;
         meta_ref_2.value2 *= 2;
-        ASSERT_NO_THROW(metadata.write_element(meta_ref_2));
+        ASSERT_NO_THROW(metadata.write(meta_ref_2));
         meta_ref_3.x *= 2;
         meta_ref_3.y *= 2;
         meta_ref_3.value1 *= 2;
         meta_ref_3.value2 *= 2;
-        ASSERT_NO_THROW(metadata.write_element(meta_ref_3));
+        ASSERT_NO_THROW(metadata.write(meta_ref_3));
         initialize_metadata::small_1(meta_ref_4);
         meta_ref_4.uid = uid_3;
-        ASSERT_THROW(metadata.write_element(meta_ref_4),
+        ASSERT_THROW(metadata.write(meta_ref_4),
             s1b::io_exception);
         meta_ref_1.size *= 2;
-        ASSERT_THROW(metadata.write_element(meta_ref_1),
+        ASSERT_THROW(metadata.write(meta_ref_1),
             s1b::element_mismatch_exception);
         meta_ref_2.size *= 2;
-        ASSERT_THROW(metadata.write_element(meta_ref_2),
+        ASSERT_THROW(metadata.write(meta_ref_2),
             s1b::element_mismatch_exception);
         meta_ref_3.size *= 2;
-        ASSERT_THROW(metadata.write_element(meta_ref_3),
+        ASSERT_THROW(metadata.write(meta_ref_3),
             s1b::element_mismatch_exception);
         ASSERT_NO_THROW(metadata.sync());
     }
@@ -866,7 +866,7 @@ S1B_TEST(FromIteratorBadUids)
             test_metadata meta;
             test_metadata meta_ref = meta_vector[i-1];
             meta_ref.uid = i;
-            ASSERT_TRUE(metadata.read_element(i, meta));
+            ASSERT_TRUE(metadata.read(i, meta));
             ASSERT_TRUE(meta_ref == meta);
         }
         ASSERT_NO_THROW(metadata.sync());
@@ -900,7 +900,7 @@ S1B_TEST(FromIterator)
         {
             test_metadata meta;
             test_metadata meta_ref = meta_vector[i-1];
-            ASSERT_TRUE(metadata.read_element(i, meta));
+            ASSERT_TRUE(metadata.read(i, meta));
             ASSERT_TRUE(meta_ref == meta);
         }
         ASSERT_NO_THROW(metadata.sync());
@@ -1045,28 +1045,28 @@ S1B_TEST(MixedRWPOperations)
             for (unsigned int i = 21; i <= 123; i++)
             {
                 initialize_metadata::small_i(meta, i);
-                ASSERT_EQ(i, metadata.push_element(meta));
+                ASSERT_EQ(i, metadata.push(meta));
             }
             for (unsigned int i = s1b::FirstUID; i <= 101; i += 3)
             {
                 initialize_metadata::small_i(meta_ref, i);
-                ASSERT_TRUE(metadata.read_element(i, meta));
+                ASSERT_TRUE(metadata.read(i, meta));
                 ASSERT_TRUE(meta_ref == meta);
                 meta.size *= 2;
                 meta.x *= 2;
                 meta.y *= 2;
                 meta.value1 *= 2;
                 meta.value2 *= 2;
-                ASSERT_THROW(metadata.write_element(meta),
+                ASSERT_THROW(metadata.write(meta),
                     s1b::element_mismatch_exception);
                 meta.size = meta_ref.size;
-                ASSERT_NO_THROW(metadata.write_element(meta));
+                ASSERT_NO_THROW(metadata.write(meta));
             }
             for (unsigned int i = 124; i <= 200; i++)
             {
                 initialize_metadata::small_i(meta_ref, i);
-                ASSERT_EQ(i, metadata.push_element(meta_ref));
-                ASSERT_TRUE(metadata.read_element(i, meta));
+                ASSERT_EQ(i, metadata.push(meta_ref));
+                ASSERT_TRUE(metadata.read(i, meta));
                 ASSERT_TRUE(meta_ref == meta);
             }
             ASSERT_NO_THROW(metadata.sync());
@@ -1080,7 +1080,7 @@ S1B_TEST(MixedRWPOperations)
             for (unsigned int i = s1b::FirstUID; i <= 101; i++)
             {
                 initialize_metadata::small_i(meta_ref, i);
-                ASSERT_TRUE(metadata.read_element(i, meta));
+                ASSERT_TRUE(metadata.read(i, meta));
                 if ((i - 1) % 3 == 0)
                 {
                     meta_ref.x *= 2;
@@ -1097,22 +1097,22 @@ S1B_TEST(MixedRWPOperations)
                     meta.y *= 2;
                     meta.value1 *= 2;
                     meta.value2 *= 2;
-                    ASSERT_THROW(metadata.write_element(meta),
+                    ASSERT_THROW(metadata.write(meta),
                         s1b::element_mismatch_exception);
                 }
                 meta.size = meta_ref.size;
-                ASSERT_NO_THROW(metadata.write_element(meta));
+                ASSERT_NO_THROW(metadata.write(meta));
             }
             for (unsigned int i = 124; i <= 200; i++)
             {
                 initialize_metadata::small_i(meta_ref, i);
-                ASSERT_TRUE(metadata.read_element(i, meta));
+                ASSERT_TRUE(metadata.read(i, meta));
                 ASSERT_TRUE(meta_ref == meta);
             }
             for (unsigned int i = 201; i <= 203; i++)
             {
                 initialize_metadata::small_i(meta_ref, i);
-                ASSERT_EQ(i, metadata.push_element(meta_ref));
+                ASSERT_EQ(i, metadata.push(meta_ref));
             }
             ASSERT_NO_THROW(metadata.sync());
         }
@@ -1125,7 +1125,7 @@ S1B_TEST(MixedRWPOperations)
             for (unsigned int i = s1b::FirstUID; i <= 101; i++)
             {
                 initialize_metadata::small_i(meta_ref, i);
-                ASSERT_TRUE(metadata.read_element(i, meta));
+                ASSERT_TRUE(metadata.read(i, meta));
                 meta_ref.x *= 2;
                 meta_ref.y *= 2;
                 meta_ref.value1 *= 2;
@@ -1135,7 +1135,7 @@ S1B_TEST(MixedRWPOperations)
             for (unsigned int i = 124; i <= 203; i++)
             {
                 initialize_metadata::small_i(meta_ref, i);
-                ASSERT_TRUE(metadata.read_element(i, meta));
+                ASSERT_TRUE(metadata.read(i, meta));
                 ASSERT_TRUE(meta_ref == meta);
             }
             ASSERT_NO_THROW(metadata.sync());
@@ -1189,9 +1189,9 @@ void _MappedCompatCreateNew(const char* filename, bool can_write)
         ASSERT_EQ(can_write, metadata.can_write());
         for (int i = 1; i <= 1000; i++)
         {
-            ASSERT_TRUE(metadata.read_element(i, meta));
+            ASSERT_TRUE(metadata.read(i, meta));
             ASSERT_TRUE(meta_vector[i-1] == meta);
-            ASSERT_TRUE(metadata.read_element(i, meta, offset));
+            ASSERT_TRUE(metadata.read(i, meta, offset));
             ASSERT_TRUE(meta_vector[i-1] == meta);
             ASSERT_TRUE(off_vector[i-1] == offset);
             ASSERT_TRUE(metadata.read_data_offset(i, offset));
