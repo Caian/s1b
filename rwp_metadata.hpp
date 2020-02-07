@@ -303,7 +303,7 @@ private:
         return last_data_offset + base_type::compute_aligned_data_size(size);
     }
 
-    s1b::uid_t push_element(
+    s1b::uid_t push(
         const metadata_type& meta,
         foffset_t& data_offset,
         foffset_t& data_size,
@@ -447,7 +447,7 @@ public:
         _global_struct = glob;
     }
 
-    bool read_element(
+    bool read(
         s1b::uid_t uid,
         metadata_type& meta,
         foffset_t& data_offset
@@ -464,13 +464,13 @@ public:
         return true;
     }
 
-    bool read_element(
+    bool read(
         s1b::uid_t uid,
         metadata_type& meta
     )
     {
         foffset_t data_offset;
-        return read_element(uid, meta, data_offset);
+        return read(uid, meta, data_offset);
     }
 
     bool read_data_offset(
@@ -479,7 +479,7 @@ public:
     )
     {
         metadata_type meta;
-        return read_element(uid, meta, data_offset);
+        return read(uid, meta, data_offset);
     }
 
     foffset_t read_data_offset(
@@ -500,7 +500,7 @@ public:
         return data_offset;
     }
 
-    void write_element(
+    void write(
         const metadata_type& meta
     )
     {
@@ -532,48 +532,48 @@ public:
         _buffer.write_object(new_elem);
     }
 
-    s1b::uid_t push_element(
+    s1b::uid_t push(
         const metadata_type& meta,
         foffset_t& data_offset,
         foffset_t& data_size
     )
     {
-        return push_element(meta, data_offset, data_size, false);
+        return push(meta, data_offset, data_size, false);
     }
 
-    s1b::uid_t push_element(
+    s1b::uid_t push(
         const metadata_type& meta,
         foffset_t& data_offset
     )
     {
         foffset_t data_size;
-        return push_element(meta, data_offset, data_size);
+        return push(meta, data_offset, data_size);
     }
 
-    s1b::uid_t push_element(
+    s1b::uid_t push(
         const metadata_type& meta
     )
     {
         foffset_t data_offset;
-        return push_element(meta, data_offset);
+        return push(meta, data_offset);
     }
 
-    s1b::uid_t push_element_fixed(
+    s1b::uid_t push_fixed(
         const metadata_type& meta,
         foffset_t data_offset,
         foffset_t& data_size
     )
     {
-        return push_element(meta, data_offset, data_size, true);
+        return push(meta, data_offset, data_size, true);
     }
 
-    s1b::uid_t push_element_fixed(
+    s1b::uid_t push_fixed(
         const metadata_type& meta,
         foffset_t data_offset
     )
     {
         foffset_t data_size;
-        return push_element_fixed(meta, data_offset, data_size);
+        return push_fixed(meta, data_offset, data_size);
     }
 
     s1b::uid_t get_last_uid(

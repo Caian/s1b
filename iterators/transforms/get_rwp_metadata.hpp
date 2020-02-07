@@ -55,7 +55,7 @@ struct get_rwp_metadata
 
         value_type meta;
 
-        if (!_metadata->read_element(val, meta))
+        if (!_metadata->read(val, meta))
         {
             EX3_THROW(invalid_uid_exception()
                 << requested_uid_ei(val)
