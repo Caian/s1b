@@ -247,7 +247,7 @@ private:
 public:
 
     rwp_metadata(
-        path_string filename
+        const path_string& filename
     ) :
         rwp_metadata_base<MetaAdapter>(),
         _buffer(
@@ -263,7 +263,7 @@ public:
 
     template <typename IT>
     rwp_metadata(
-        path_string filename,
+        const path_string& filename,
         IT metadata_begin,
         IT metadata_end
     ) :
@@ -280,7 +280,7 @@ public:
     }
 
     rwp_metadata(
-        path_string filename,
+        const path_string& filename,
         bool can_write
     ) :
         rwp_metadata_base<MetaAdapter>(),

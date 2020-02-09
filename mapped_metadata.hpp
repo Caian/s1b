@@ -247,7 +247,7 @@ public:
 
     template <typename IT>
     mapped_metadata(
-        path_string filename,
+        const path_string& filename,
         IT metadata_begin,
         IT metadata_end,
         hugetlb_mode htlb_mode=S1B_HUGETLB_OFF
@@ -267,7 +267,7 @@ public:
     }
 
     mapped_metadata(
-        path_string filename,
+        const path_string& filename,
         bool can_write,
         hugetlb_mode htlb_mode=S1B_HUGETLB_OFF
     ) :
