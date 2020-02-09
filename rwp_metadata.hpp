@@ -27,8 +27,8 @@
 #include "exceptions.hpp"
 #include "path_string.hpp"
 #include "rwp_buffer.hpp"
-#include "metadata_base.hpp"
 #include "meta_file_header.hpp"
+#include "rwp_metadata_base.hpp"
 
 #include "iterators/uid_iterator.hpp"
 
@@ -44,11 +44,11 @@ namespace s1b {
 // TODO assert meta check
 
 template <typename MetaAdapter>
-class rwp_metadata : public metadata_base<MetaAdapter>
+class rwp_metadata : public rwp_metadata_base<MetaAdapter>
 {
 public:
 
-    typedef metadata_base<MetaAdapter> base_type;
+    typedef rwp_metadata_base<MetaAdapter> base_type;
 
     typedef typename base_type::metadata_type metadata_type;
 
@@ -66,124 +66,40 @@ private:
     void assert_header(
     )
     {
-        meta_file_header header;
-
-        const foffset_t header_offset = base_type::get_header_offset();
-
-        _buffer.seek(header_offset);
-        _buffer.read_object(header, true);
-
-        meta_file_header new_header(
-            base_type::Align,
-            base_type::get_meta_check_size(),
-            base_type::file_metadata_size,
-            base_type::global_struct_size);
-
-        try
-        {
-            new_header.assert_other(header);
-        }
-        catch (const io_exception& e)
-        {
-            EX3_RETHROW(e
-                << file_position_ei(header_offset)
-                << file_name_ei(filename()));
-        }
+        base_type::assert_header(_buffer);
     }
 
     void assert_meta_check(
     )
     {
-        meta_file_header header;
-
-        _buffer.seek(base_type::get_header_offset());
-        _buffer.read_object(header, true);
-
-        const foffset_t check_sz = header.checksz;
-
-        const foffset_t ref_check_sz = base_type::get_meta_check_size();
-
-        if (ref_check_sz != check_sz)
-        {
-            EX3_THROW(check_data_mismatch_exception()
-                << expected_size_ei(ref_check_sz)
-                << actual_size_ei(check_sz)
-                << file_name_ei(filename()));
-        }
-
-        std::vector<char> check(check_sz);
-
-        const foffset_t check_offset = base_type::get_meta_check_offset();
-
-        _buffer.seek(check_offset);
-        _buffer.read(&check[0], check.size(), true, true);
-
-        const char* const p_check = &check[0];
-
-        const char* const p_ref_check_begin = base_type::meta_adapter().
-            get_meta_check_ptr();
-
-        const char* const p_ref_check_end = p_ref_check_begin + check_sz;
-
-        std::pair<const char*, const char*> comp;
-
-        comp = std::mismatch(p_ref_check_begin, p_ref_check_end, p_check);
-
-        if (comp.first != p_ref_check_end)
-        {
-            const foffset_t offset = std::distance(
-                p_ref_check_begin, comp.first);
-
-            EX3_THROW(check_data_mismatch_exception()
-                << expected_value_ei(*comp.first)
-                << actual_value_ei(*comp.second)
-                << offset_ei(offset)
-                << file_position_ei(check_offset)
-                << file_name_ei(filename()));
-        }
+        base_type::assert_meta_check(_buffer);
     }
 
     void create_header(
     )
     {
-        // TODO refactor to metadata_base
-        meta_file_header new_header(
-            base_type::Align,
-            base_type::get_meta_check_size(),
-            base_type::file_metadata_size,
-            base_type::global_struct_size);
+        base_type::create_header(_buffer);
 
-        _buffer.seek(base_type::get_header_offset());
-        _buffer.write_object(new_header);
     }
 
     void create_meta_check(
     )
     {
-        const char* p_src_check = base_type::meta_adapter().
-            get_meta_check_ptr();
+        base_type::create_meta_check(_buffer);
 
-        foffset_t check_sz = base_type::get_meta_check_size();
-
-        _buffer.seek(base_type::get_meta_check_offset());
-        _buffer.write(p_src_check, check_sz);
     }
 
     global_struct_type read_global_struct(
     )
     {
-        global_struct_type glob;
-        _buffer.seek(base_type::get_global_struct_offset());
-        _buffer.read_object(glob, true);
-        return glob;
+        return base_type::read_global_struct(_buffer);
     }
 
     void write_global_struct(
         const global_struct_type& glob
     )
     {
-        _buffer.seek(base_type::get_global_struct_offset());
-        _buffer.write_object(glob);
+        base_type::write_global_struct(_buffer, glob);
     }
 
     bool read_file_element(
@@ -192,38 +108,7 @@ private:
         bool required
     )
     {
-        if (uid < FirstUID)
-        {
-            EX3_THROW(invalid_uid_exception()
-                << requested_uid_ei(uid)
-                << file_name_ei(filename()));
-        }
-
-        _buffer.seek(base_type::get_element_offset_unsafe(uid));
-
-        try
-        {
-            if (_buffer.read_object(elem, required) == 0)
-                return false;
-        }
-        catch (const io_exception& e)
-        {
-            EX3_RETHROW(e
-                << requested_uid_ei(uid)
-                << file_name_ei(filename()));
-        }
-
-        s1b::uid_t file_uid = base_type::meta_adapter().get_uid(elem);
-
-        if (file_uid != uid)
-        {
-            EX3_THROW(element_mismatch_exception()
-                << requested_uid_ei(uid)
-                << actual_uid_ei(file_uid)
-                << file_name_ei(filename()));
-        }
-
-        return true;
+        return base_type::read_file_element(_buffer, uid, elem, required);
     }
 
     template <typename IT>
@@ -364,7 +249,7 @@ public:
     rwp_metadata(
         path_string filename
     ) :
-        metadata_base<MetaAdapter>(),
+        rwp_metadata_base<MetaAdapter>(),
         _buffer(
             filename,
             S1B_OPEN_NEW),
@@ -382,7 +267,7 @@ public:
         IT metadata_begin,
         IT metadata_end
     ) :
-        metadata_base<MetaAdapter>(),
+        rwp_metadata_base<MetaAdapter>(),
         _buffer(
             filename,
             S1B_OPEN_NEW),
@@ -398,7 +283,7 @@ public:
         path_string filename,
         bool can_write
     ) :
-        metadata_base<MetaAdapter>(),
+        rwp_metadata_base<MetaAdapter>(),
         _buffer(
             filename,
             can_write ? S1B_OPEN_WRITE : S1B_OPEN_DEFAULT),
