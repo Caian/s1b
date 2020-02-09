@@ -24,6 +24,7 @@
 #include "metadata_test.hpp"
 
 #include <s1b/rwp_metadata.hpp>
+#include <s1b/push_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
 
 #include <vector>
@@ -31,6 +32,7 @@
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
+typedef s1b::push_metadata<test_adapter> test_push_metadata;
 typedef s1b::mapped_metadata<test_adapter> test_mapped_metadata;
 
 // TODO unlink
@@ -1218,6 +1220,97 @@ S1B_TEST(MappedCompatCreateNewAndOpenReadOnly)
 S1B_TEST(MappedCompatCreateNewAndOpenWrite)
 
     _MappedCompatCreateNew(s1b_file_name, true);
+}
+
+void _PushCompatCreateNew(const char* filename, bool can_write)
+{
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    try
+    {
+        test_global_data glob;
+        test_push_metadata metadata(filename, meta_vector.begin(),
+            meta_vector.end(), glob);
+        for (int i = 1001; i <= 1010; i++)
+        {
+            test_metadata meta;
+            initialize_metadata::small_i(meta, i);
+            meta_vector.push_back(meta);
+            metadata.push(meta);
+        }
+        ASSERT_NO_THROW(metadata.align());
+        ASSERT_NO_THROW(metadata.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        test_metadata meta;
+        s1b::foffset_t offset;
+        test_rwp_metadata metadata(filename, can_write);
+        ASSERT_EQ(can_write, metadata.can_write());
+        for (int i = 1; i <= 500; i++)
+        {
+            ASSERT_TRUE(metadata.read(i, meta));
+            ASSERT_TRUE(meta_vector[i-1] == meta);
+            ASSERT_TRUE(metadata.read(i, meta, offset));
+            ASSERT_TRUE(meta_vector[i-1] == meta);
+            ASSERT_TRUE(metadata.read_data_offset(i, offset));
+            ASSERT_NO_THROW(offset = metadata.read_data_offset(meta));
+        }
+        if (can_write)
+        {
+            for (int i = 1011; i <= 1020; i++)
+            {
+                test_metadata meta;
+                initialize_metadata::small_i(meta, i);
+                meta_vector.push_back(meta);
+                metadata.push(meta);
+            }
+        }
+        for (int i = 501; i <= 1020; i++)
+        {
+            if (static_cast<unsigned int>(i) > meta_vector.size())
+                continue;
+            ASSERT_TRUE(metadata.read(i, meta));
+            ASSERT_TRUE(meta_vector[i-1] == meta);
+            ASSERT_TRUE(metadata.read(i, meta, offset));
+            ASSERT_TRUE(meta_vector[i-1] == meta);
+            ASSERT_TRUE(metadata.read_data_offset(i, offset));
+            ASSERT_NO_THROW(offset = metadata.read_data_offset(meta));
+        }
+        ASSERT_NO_THROW(metadata.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(PushCompatCreateNewAndOpenReadOnly)
+
+    _PushCompatCreateNew(s1b_file_name, false);
+}
+
+S1B_TEST(PushCompatCreateNewAndOpenWrite)
+
+    _PushCompatCreateNew(s1b_file_name, true);
 }
 
 }

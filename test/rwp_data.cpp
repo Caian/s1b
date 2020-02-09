@@ -24,8 +24,10 @@
 #include "metadata_test.hpp"
 
 #include <s1b/rwp_data.hpp>
+#include <s1b/push_data.hpp>
 #include <s1b/mapped_data.hpp>
 #include <s1b/rwp_metadata.hpp>
+#include <s1b/push_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
 
 #include <boost/type_traits/is_same.hpp>
@@ -36,6 +38,7 @@
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
+typedef s1b::push_metadata<test_adapter> test_push_metadata;
 typedef s1b::mapped_metadata<test_adapter> test_mapped_metadata;
 
 // TODO mapped_data compat
@@ -993,6 +996,202 @@ S1B_TEST(MappedCompatCreateNewAndPush)
         }
 
         ASSERT_NO_THROW(data.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename, false,
+            s1b::S1B_HUGETLB_OFF);
+
+        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_WRITE, metadata, 0);
+        ASSERT_TRUE(data.can_write());
+        ASSERT_EQ(1, data.num_slots());
+
+        for (int i = 17; i < 4359; i += 33 + 2*i, prev_off = off)
+        {
+            test_data.resize(i);
+            for (int j = 0; j < i; j++)
+                test_data[j] = 32 + ((i + j) % (127-32));
+
+            ASSERT_NO_THROW(off = data.push(&test_data[0], i));
+            ASSERT_GT(off, prev_off);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+void _PushCompatCreateNew(const char* filename, bool can_write)
+{
+    std::vector<test_metadata> meta_vector;
+    std::vector<char> test_data;
+    std::vector<char> read_data;
+    s1b::foffset_t prev_off = -1;
+    s1b::foffset_t off;
+    s1b::foffset_t size;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    std::string meta_filename(filename);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_global_data glob;
+        test_push_metadata metadata(meta_filename, glob);
+        ASSERT_TRUE(metadata.can_write());
+
+        s1b::push_data data(filename, true);
+        ASSERT_TRUE(data.can_write());
+        ASSERT_EQ(1, data.num_slots());
+
+        for (int i = 1; i <= 1000; i++, prev_off = off)
+        {
+            size = meta_vector[i-1].size;
+
+            test_data.resize(size);
+            for (int j = 0; j < size; j++)
+                test_data[j] = 32 + ((size + j + 21) % (127-32));
+
+            off = data.push(&test_data[0], size);
+            ASSERT_GT(off, prev_off);
+            ASSERT_EQ(i, metadata.push_fixed(meta_vector[i-1], off));
+        }
+
+        ASSERT_NO_THROW(data.align());
+        ASSERT_NO_THROW(data.sync());
+        ASSERT_NO_THROW(metadata.align());
+        ASSERT_NO_THROW(metadata.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename,
+            false, s1b::S1B_HUGETLB_OFF);
+
+        s1b::open_mode mode = can_write ? s1b::S1B_OPEN_WRITE :
+            s1b::S1B_OPEN_DEFAULT;
+
+        s1b::rwp_data data(filename, mode, metadata, 0);
+        ASSERT_EQ(can_write, data.can_write());
+        ASSERT_EQ(1, data.num_slots());
+
+        prev_off = -1;
+
+        for (int i = 1; i <= 1000; i++, prev_off = off)
+        {
+            size = meta_vector[i-1].size;
+            ASSERT_NO_THROW(off = metadata.get_data_offset(
+                meta_vector[i-1].uid));
+            ASSERT_GT(off, prev_off);
+
+            test_data.resize(size);
+            for (int j = 0; j < size; j++)
+                test_data[j] = 32 + ((size + j + 21) % (127-32));
+
+            read_data.resize(size);
+            ASSERT_NO_THROW(data.read(&read_data[0], off, size));
+
+            for (int j = 0; j < size; j++)
+                ASSERT_TRUE(test_data[j] == read_data[j]);
+
+            if (can_write)
+            {
+                ASSERT_NO_THROW(data.write(&test_data[0], off, size));
+            }
+        }
+
+        ASSERT_NO_THROW(data.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(PushCompatCreateNewAndOpenReadOnly)
+
+    _PushCompatCreateNew(s1b_file_name, false);
+}
+
+S1B_TEST(PushCompatCreateNewAndOpenWrite)
+
+    _PushCompatCreateNew(s1b_file_name, true);
+}
+
+S1B_TEST(PushCompatCreateNewAndPush)
+
+    std::vector<test_metadata> meta_vector;
+    std::vector<char> test_data;
+    std::vector<char> read_data;
+    s1b::foffset_t prev_off = -1;
+    s1b::foffset_t off;
+    s1b::foffset_t size;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_global_data glob;
+        test_push_metadata metadata(meta_filename, glob);
+        ASSERT_TRUE(metadata.can_write());
+
+        s1b::push_data data(s1b_file_name, true);
+        ASSERT_TRUE(data.can_write());
+        ASSERT_EQ(1, data.num_slots());
+
+        for (int i = 1; i <= 1000; i++, prev_off = off)
+        {
+            size = meta_vector[i-1].size;
+
+            test_data.resize(size);
+            for (int j = 0; j < size; j++)
+                test_data[j] = 32 + ((size + j + 21) % (127-32));
+
+            ASSERT_NO_THROW(off = data.push(&test_data[0], size));
+            ASSERT_GT(off, prev_off);
+            ASSERT_EQ(i, metadata.push_fixed(meta_vector[i-1], off));
+        }
+
+        ASSERT_NO_THROW(data.align());
+        ASSERT_NO_THROW(data.sync());
+        ASSERT_NO_THROW(metadata.align());
+        ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
     {

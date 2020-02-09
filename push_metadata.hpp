@@ -30,8 +30,6 @@
 #include "meta_file_header.hpp"
 #include "rwp_metadata_base.hpp"
 
-#include "iterators/uid_iterator.hpp"
-
 #include "traits/metadata_type.hpp"
 #include "traits/global_struct_type.hpp"
 
@@ -44,7 +42,7 @@ namespace s1b {
 // TODO assert meta check
 
 template <typename MetaAdapter>
-class rwp_metadata : public rwp_metadata_base<MetaAdapter>
+class push_metadata : public rwp_metadata_base<MetaAdapter>
 {
 public:
 
@@ -62,6 +60,8 @@ private:
 
     rwp_buffer _buffer;
     global_struct_type _global_struct;
+    s1b::uid_t _next_uid;
+    foffset_t _next_data_offset;
 
     void assert_header(
     )
@@ -117,39 +117,33 @@ private:
         IT metadata_end
     )
     {
-        s1b::uid_t uid = FirstUID;
-        foffset_t offset = 0;
-
-        for ( ; metadata_begin != metadata_end; metadata_begin++, uid++)
+        for ( ; metadata_begin != metadata_end; metadata_begin++, _next_uid++)
         {
             // TODO consistency check: input uid matches
 
             file_metadata_type elem(*metadata_begin);
 
-            elem.data_offset = offset;
+            elem.data_offset = _next_data_offset;
             elem.clean_bit = 0;
 
-            base_type::meta_adapter().set_uid(elem, uid);
+            base_type::meta_adapter().set_uid(elem, _next_uid);
 
-            _buffer.seek(base_type::get_element_offset_unsafe(uid));
+            _buffer.seek(base_type::get_element_offset_unsafe(_next_uid));
             _buffer.write_object(elem);
 
             const foffset_t size = base_type::meta_adapter().
                 get_data_size(elem);
 
-            offset += base_type::compute_aligned_data_size(size);
+            _next_data_offset += base_type::compute_aligned_data_size(size);
         }
-
-        align_file(uid-1);
     }
 
     void align_file(
-        s1b::uid_t last_id
     )
     {
-        foffset_t file_size = _buffer.get_size();
-        foffset_t align_size = base_type::get_element_offset_unsafe(
-            last_id + 1);
+        const foffset_t file_size = _buffer.get_size();
+        const foffset_t align_size = base_type::
+            get_element_offset_unsafe(_next_uid);
 
         if (align_size < file_size)
         {
@@ -166,8 +160,77 @@ private:
         }
     }
 
-    foffset_t get_data_size(
-        s1b::uid_t& last_uid
+    s1b::uid_t push(
+        const metadata_type& meta,
+        foffset_t& data_offset,
+        foffset_t& data_size,
+        bool force_data_offset
+    )
+    {
+        static const s1b::foffset_t Align = base_type::Align;
+
+        if (force_data_offset)
+        {
+            if (!mem_align::is_aligned<Align>(data_offset))
+            {
+                EX3_THROW(misaligned_exception()
+                    << file_size_ei(_next_data_offset)
+                    << offset_ei(data_offset)
+                    << expected_alignment_ei(
+                        static_cast<foffset_t>(Align))
+                    << file_name_ei(filename()));
+            }
+
+            if (data_offset < _next_data_offset)
+            {
+                EX3_THROW(data_offset_overlap_exception()
+                    << file_size_ei(_next_data_offset)
+                    << offset_ei(data_offset)
+                    << file_name_ei(filename()));
+            }
+        }
+        else
+        {
+            data_offset = _next_data_offset;
+        }
+
+        const s1b::uid_t uid = _next_uid;
+
+        file_metadata_type elem(meta);
+
+        elem.data_offset = data_offset;
+        elem.clean_bit = 0;
+
+        base_type::meta_adapter().set_uid(elem, uid);
+
+        _buffer.write_object(elem);
+
+        data_size = base_type::meta_adapter().get_data_size(elem);
+
+        _next_uid++;
+        _next_data_offset = data_offset + base_type::
+            compute_aligned_data_size(data_size);
+
+        _buffer.seek(base_type::get_element_offset_unsafe(_next_uid));
+
+        return uid;
+    }
+
+    s1b::uid_t _get_last_uid(
+    ) const
+    {
+        try
+        {
+            return base_type::compute_num_elements(_buffer.get_size());
+        }
+        catch (const io_exception& e)
+        {
+            EX3_RETHROW(e
+                << file_name_ei(filename()));
+        }
+    }
+
+    foffset_t _get_data_size(
     )
     {
         // Get the data offset and size of the last element and compute the
@@ -175,7 +238,7 @@ private:
 
         // WARNING: Data offsets must not be reordered for this to work!
 
-        last_uid = get_last_uid();
+        s1b::uid_t last_uid = _next_uid - 1;
 
         if (last_uid == FirstUID-1)
             return 0;
@@ -188,106 +251,58 @@ private:
         return last_data_offset + base_type::compute_aligned_data_size(size);
     }
 
-    s1b::uid_t push(
-        const metadata_type& meta,
-        foffset_t& data_offset,
-        foffset_t& data_size,
-        bool force_data_offset
-    )
-    {
-        static const s1b::foffset_t Align = base_type::Align;
-
-        s1b::uid_t last_uid;
-        const foffset_t curr_data_offset = get_data_size(last_uid);
-
-        if (force_data_offset)
-        {
-            if (!mem_align::is_aligned<Align>(data_offset))
-            {
-                EX3_THROW(misaligned_exception()
-                    << file_size_ei(curr_data_offset)
-                    << offset_ei(data_offset)
-                    << expected_alignment_ei(
-                        static_cast<foffset_t>(Align))
-                    << file_name_ei(filename()));
-            }
-
-            if (data_offset < curr_data_offset)
-            {
-                EX3_THROW(data_offset_overlap_exception()
-                    << file_size_ei(curr_data_offset)
-                    << offset_ei(data_offset)
-                    << file_name_ei(filename()));
-            }
-        }
-        else
-        {
-            data_offset = curr_data_offset;
-        }
-
-        const s1b::uid_t uid = last_uid + 1;
-
-        file_metadata_type elem(meta);
-
-        elem.data_offset = data_offset;
-        elem.clean_bit = 0;
-
-        base_type::meta_adapter().set_uid(elem, uid);
-
-        _buffer.seek(base_type::get_element_offset_unsafe(uid));
-        _buffer.write_object(elem);
-
-        align_file(uid);
-
-        data_size = base_type::meta_adapter().get_data_size(elem);
-
-        return uid;
-    }
-
 public:
 
-    rwp_metadata(
-        path_string filename
+    push_metadata(
+        const path_string& filename,
+        const global_struct_type& global_struct
     ) :
         rwp_metadata_base<MetaAdapter>(),
         _buffer(
             filename,
             S1B_OPEN_NEW),
-        _global_struct()
+        _global_struct(global_struct),
+        _next_uid(FirstUID),
+        _next_data_offset(0)
     {
         create_header();
         write_global_struct(_global_struct);
         create_meta_check();
-        align_file(FirstUID-1);
+        align_file();
     }
 
     template <typename IT>
-    rwp_metadata(
-        path_string filename,
+    push_metadata(
+        const path_string& filename,
         IT metadata_begin,
-        IT metadata_end
+        IT metadata_end,
+        const global_struct_type& global_struct
     ) :
         rwp_metadata_base<MetaAdapter>(),
         _buffer(
             filename,
             S1B_OPEN_NEW),
-        _global_struct()
+        _global_struct(global_struct),
+        _next_uid(FirstUID),
+        _next_data_offset(0)
     {
         create_header();
         write_global_struct(_global_struct);
         create_meta_check();
         copy_elements(metadata_begin, metadata_end);
+        align_file();
     }
 
-    rwp_metadata(
-        path_string filename,
-        bool can_write
+    push_metadata(
+        const path_string& filename
     ) :
         rwp_metadata_base<MetaAdapter>(),
         _buffer(
             filename,
-            can_write ? S1B_OPEN_WRITE : S1B_OPEN_DEFAULT),
-        _global_struct(read_global_struct())
+            S1B_OPEN_WRITE),
+        _global_struct(read_global_struct()),
+        _next_uid(_get_last_uid() + 1),
+        _next_data_offset(_get_data_size())
     {
         assert_header();
         assert_meta_check();
@@ -322,99 +337,6 @@ public:
     ) const
     {
         return _global_struct;
-    }
-
-    void update_global_struct(
-        const global_struct_type& glob
-    )
-    {
-        write_global_struct(glob);
-        _global_struct = glob;
-    }
-
-    bool read(
-        s1b::uid_t uid,
-        metadata_type& meta,
-        foffset_t& data_offset
-    )
-    {
-        file_metadata_type elem;
-
-        if (!read_file_element(uid, elem, false))
-            return false;
-
-        meta = elem;
-        data_offset = elem.data_offset;
-
-        return true;
-    }
-
-    bool read(
-        s1b::uid_t uid,
-        metadata_type& meta
-    )
-    {
-        foffset_t data_offset;
-        return read(uid, meta, data_offset);
-    }
-
-    bool read_data_offset(
-        s1b::uid_t uid,
-        foffset_t& data_offset
-    )
-    {
-        metadata_type meta;
-        return read(uid, meta, data_offset);
-    }
-
-    foffset_t read_data_offset(
-        const metadata_type& elem
-    )
-    {
-        const s1b::uid_t uid = base_type::meta_adapter().get_uid(elem);
-
-        foffset_t data_offset;
-
-        if (!read_data_offset(uid, data_offset))
-        {
-            EX3_THROW(invalid_uid_exception()
-                << requested_uid_ei(uid)
-                << file_name_ei(filename()));
-        }
-
-        return data_offset;
-    }
-
-    void write(
-        const metadata_type& meta
-    )
-    {
-        const s1b::uid_t uid = base_type::meta_adapter().get_uid(meta);
-
-        file_metadata_type elem;
-        file_metadata_type new_elem(meta);
-
-        read_file_element(uid, elem, true);
-
-        const foffset_t size = base_type::meta_adapter().
-            get_data_size(elem);
-
-        const foffset_t new_size = base_type::meta_adapter().
-            get_data_size(new_elem);
-
-        if (size != new_size)
-        {
-            EX3_THROW(element_mismatch_exception()
-                << expected_size_ei(size)
-                << actual_size_ei(new_size)
-                << file_name_ei(filename()));
-        }
-
-        new_elem.data_offset = elem.data_offset;
-        new_elem.clean_bit = elem.clean_bit;
-
-        _buffer.seek(base_type::get_element_offset_unsafe(uid));
-        _buffer.write_object(new_elem);
     }
 
     s1b::uid_t push(
@@ -464,34 +386,19 @@ public:
     s1b::uid_t get_last_uid(
     ) const
     {
-        try
-        {
-            return base_type::compute_num_elements(_buffer.get_size());
-        }
-        catch (const io_exception& e)
-        {
-            EX3_RETHROW(e
-                << file_name_ei(filename()));
-        }
-    }
-
-    iterators::uid_iterator uid_begin(
-    ) const
-    {
-        return iterators::uid_iterator(FirstUID);
-    }
-
-    iterators::uid_iterator uid_end(
-    ) const
-    {
-        return iterators::uid_iterator(get_last_uid() + 1);
+        return _next_uid - 1;
     }
 
     foffset_t get_data_size(
+    ) const
+    {
+        return _next_data_offset;
+    }
+
+    void align(
     )
     {
-        s1b::uid_t last_uid;
-        return get_data_size(last_uid);
+        align_file();
     }
 
     void sync(
@@ -500,7 +407,7 @@ public:
         _buffer.sync();
     }
 
-    virtual ~rwp_metadata(
+    virtual ~push_metadata(
     )
     {
     }
