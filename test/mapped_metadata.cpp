@@ -24,6 +24,7 @@
 #include "metadata_test.hpp"
 
 #include <s1b/rwp_metadata.hpp>
+#include <s1b/push_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
 
 #include <vector>
@@ -31,6 +32,7 @@
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
+typedef s1b::push_metadata<test_adapter> test_push_metadata;
 typedef s1b::mapped_metadata<test_adapter> test_mapped_metadata;
 
 // TODO unlink
@@ -1019,6 +1021,67 @@ S1B_TEST(RWPCompatCreateNewAndOpenReadOnly)
 S1B_TEST(RWPCompatCreateNewAndOpenWrite)
 
     _RWPCompatCreateNew(s1b_file_name, true);
+}
+
+void _PushCompatCreateNew(const char* filename, bool can_write)
+{
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    try
+    {
+        test_global_data glob;
+        test_push_metadata metadata(filename, meta_vector.begin(),
+            meta_vector.end(), glob);
+        ASSERT_NO_THROW(metadata.align());
+        ASSERT_NO_THROW(metadata.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        const test_metadata* cp_meta;
+        test_mapped_metadata metadata(filename, can_write,
+            s1b::S1B_HUGETLB_OFF);
+        ASSERT_EQ(can_write, metadata.can_write());
+        for (int i = 1; i <= 1000; i++)
+        {
+            ASSERT_NO_THROW(cp_meta = &metadata.get_element(i));
+            ASSERT_TRUE(meta_vector[i-1] == *cp_meta);
+            ASSERT_NO_THROW(metadata.get_data_offset(i));
+            ASSERT_NO_THROW(metadata.get_data_offset(*cp_meta));
+        }
+        ASSERT_NO_THROW(metadata.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(PushCompatCreateNewAndOpenReadOnly)
+
+    _PushCompatCreateNew(s1b_file_name, false);
+}
+
+S1B_TEST(PushCompatCreateNewAndOpenWrite)
+
+    _PushCompatCreateNew(s1b_file_name, true);
 }
 
 }
