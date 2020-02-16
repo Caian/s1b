@@ -26,4 +26,6 @@ build_and_test_dir path_static_1 "-DS1B_USE_STATIC_STRINGS"
 build_and_test_dir path_static_2 "-DS1B_USE_STATIC_STRINGS"
 build_and_test_dir path_static_3 "-DS1B_USE_STATIC_STRINGS"
 build_and_test_dir path_dynamic
+build_and_test_dir push_buffer_10M
+build_and_test_dir push_buffer_16M
 build_and_test_dir .

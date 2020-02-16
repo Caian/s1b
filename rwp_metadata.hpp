@@ -44,11 +44,11 @@ namespace s1b {
 // TODO assert meta check
 
 template <typename MetaAdapter>
-class rwp_metadata : public rwp_metadata_base<MetaAdapter>
+class rwp_metadata : public rwp_metadata_base<MetaAdapter, rwp_buffer>
 {
 public:
 
-    typedef rwp_metadata_base<MetaAdapter> base_type;
+    typedef rwp_metadata_base<MetaAdapter, rwp_buffer> base_type;
 
     typedef typename base_type::metadata_type metadata_type;
 
@@ -249,7 +249,7 @@ public:
     rwp_metadata(
         const path_string& filename
     ) :
-        rwp_metadata_base<MetaAdapter>(),
+        rwp_metadata_base<MetaAdapter, rwp_buffer>(),
         _buffer(
             filename,
             S1B_OPEN_NEW),
@@ -267,7 +267,7 @@ public:
         IT metadata_begin,
         IT metadata_end
     ) :
-        rwp_metadata_base<MetaAdapter>(),
+        rwp_metadata_base<MetaAdapter, rwp_buffer>(),
         _buffer(
             filename,
             S1B_OPEN_NEW),
@@ -283,7 +283,7 @@ public:
         const path_string& filename,
         bool can_write
     ) :
-        rwp_metadata_base<MetaAdapter>(),
+        rwp_metadata_base<MetaAdapter, rwp_buffer>(),
         _buffer(
             filename,
             can_write ? S1B_OPEN_WRITE : S1B_OPEN_DEFAULT),

@@ -194,11 +194,25 @@ S1B_TEST(OpenMisligned) // TODO add to others
 
     try
     {
-        test_metadata meta;
         test_global_data glob;
         test_push_metadata metadata(s1b_file_name, glob);
-        ASSERT_TRUE(sizeof(meta) % 64 != 0);
-        ASSERT_NO_THROW(metadata.push(meta));
+        ASSERT_NO_THROW(metadata.align());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        s1b::rwp_buffer metadata(s1b_file_name, s1b::S1B_OPEN_WRITE);
+        ASSERT_TRUE(metadata.get_size() % 64 == 0);
+        ASSERT_NO_THROW(metadata.seek(metadata.get_size()));
+        ASSERT_NO_THROW(metadata.write("", 1));
+        ASSERT_TRUE(metadata.get_size() % 64 != 0);
     }
     catch (const std::exception& e)
     {

@@ -65,11 +65,10 @@ S1B_TEST(OpenAligned) // TODO add to others
 
     try
     {
-        char test_data[129];
+        char test_data[128];
 
-        s1b::push_data data(s1b_file_name, true);
-        ASSERT_NO_THROW(data.push(test_data, sizeof(test_data)));
-        ASSERT_NO_THROW(data.align());
+        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_NEW);
+        ASSERT_NO_THROW(data.write(test_data, sizeof(test_data)));
     }
     catch (const std::exception& e)
     {
@@ -88,8 +87,8 @@ S1B_TEST(OpenMisligned) // TODO add to others
     {
         char test_data[129];
 
-        s1b::push_data data(s1b_file_name, true);
-        ASSERT_NO_THROW(data.push(test_data, sizeof(test_data)));
+        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_NEW);
+        ASSERT_NO_THROW(data.write(test_data, sizeof(test_data)));
     }
     catch (const std::exception& e)
     {
@@ -176,7 +175,6 @@ S1B_TEST(OpenEmptyAndPush)
             ASSERT_GT(off, prev_off);
         }
 
-        ASSERT_GT(data.slot_size(), data.get_size());
         ASSERT_NO_THROW(data.align());
         ASSERT_EQ(data.get_size(), data.slot_size());
         ASSERT_NO_THROW(data.align());
@@ -213,7 +211,6 @@ S1B_TEST(AlignAndReOpen)
             ASSERT_GT(off, prev_off);
         }
 
-        ASSERT_GT(data.slot_size(), data.get_size());
         ASSERT_NO_THROW(data.align());
         ASSERT_EQ(data.get_size(), data.slot_size());
         ASSERT_NO_THROW(data.align());
@@ -316,7 +313,7 @@ S1B_TEST(MappedCompatCreateNewAndPush)
             ASSERT_GT(off, prev_off);
         }
 
-        ASSERT_NO_THROW(data.align());
+        // ASSERT_NO_THROW(data.align());
     }
     catch (const std::exception& e)
     {
@@ -395,7 +392,7 @@ S1B_TEST(RwpCompatCreateNewAndPush)
             ASSERT_GT(off, prev_off);
         }
 
-        ASSERT_NO_THROW(data.align());
+        // ASSERT_NO_THROW(data.align());
     }
     catch (const std::exception& e)
     {

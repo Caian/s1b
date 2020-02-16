@@ -20,16 +20,12 @@
 
 #pragma once
 
-#include "metadata_base.hpp"
-
-
-
-
 #include "types.hpp"
 #include "macros.hpp"
 #include "metadata.hpp"
 #include "mem_align.hpp"
 #include "exceptions.hpp"
+#include "metadata_base.hpp"
 #include "meta_file_header.hpp"
 
 #include "traits/metadata_type.hpp"
@@ -39,8 +35,8 @@
 
 namespace s1b { // TODO move to detail
 
-template <typename MetaAdapter>
-class rwp_metadata_base : public metadata_base<MetaAdapter>
+template <typename MetaAdapter, typename Buffer>
+class rwp_metadata_base : public metadata_base<MetaAdapter> // TODO buffer_metadata_base
 {
 public:
 
@@ -70,7 +66,7 @@ protected:
 protected:
 
     void assert_header(
-        rwp_buffer& buffer
+        Buffer& buffer
     ) const
     {
         meta_file_header header;
@@ -96,7 +92,7 @@ protected:
     }
 
     void assert_meta_check(
-        rwp_buffer& buffer
+        Buffer& buffer
     ) const
     {
         meta_file_header header;
@@ -149,7 +145,7 @@ protected:
     }
 
     void create_header(
-        rwp_buffer& buffer
+        Buffer& buffer
     ) const
     {
         // TODO refactor to metadata_base
@@ -161,7 +157,7 @@ protected:
     }
 
     void create_meta_check(
-        rwp_buffer& buffer
+        Buffer& buffer
     ) const
     {
         const char* p_src_check = base_type::meta_adapter().
@@ -174,7 +170,7 @@ protected:
     }
 
     global_struct_type read_global_struct(
-        rwp_buffer& buffer
+        Buffer& buffer
     ) const
     {
         global_struct_type glob;
@@ -184,7 +180,7 @@ protected:
     }
 
     void write_global_struct(
-        rwp_buffer& buffer,
+        Buffer& buffer,
         const global_struct_type& glob
     ) const
     {
@@ -193,7 +189,7 @@ protected:
     }
 
     bool read_file_element(
-        rwp_buffer& buffer,
+        Buffer& buffer,
         s1b::uid_t uid,
         file_metadata_type& elem,
         bool required

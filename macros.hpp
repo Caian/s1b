@@ -36,6 +36,11 @@
 /** Align for 512-bit vector instructions. */
 #define S1B_DEFAULT_ALIGNMENT_BYTES 64
 
+/** Use a large push buffer to reduce the number of write operations. */
+#if !defined(S1B_PUSH_BUFFER_SIZE)
+#define S1B_PUSH_BUFFER_SIZE 10ULL*1024ULL*1024ULL // 10 MiB
+#endif
+
 /** Allow developers to specify custom aligments for metadata. */
 #if !defined(S1B_META_ALIGNMENT_BYTES)
 #define S1B_META_ALIGNMENT_BYTES S1B_DEFAULT_ALIGNMENT_BYTES
