@@ -26,7 +26,7 @@
 #include "mem_align.hpp"
 #include "exceptions.hpp"
 #include "path_string.hpp"
-#include "rwp_buffer.hpp"
+#include "push_buffer.hpp"
 #include "meta_file_header.hpp"
 #include "rwp_metadata_base.hpp"
 
@@ -42,11 +42,11 @@ namespace s1b {
 // TODO assert meta check
 
 template <typename MetaAdapter>
-class push_metadata : public rwp_metadata_base<MetaAdapter>
+class push_metadata : public rwp_metadata_base<MetaAdapter, push_buffer>
 {
 public:
 
-    typedef rwp_metadata_base<MetaAdapter> base_type;
+    typedef rwp_metadata_base<MetaAdapter, push_buffer> base_type;
 
     typedef typename base_type::metadata_type metadata_type;
 
@@ -56,9 +56,15 @@ protected:
 
     typedef typename base_type::file_metadata_type file_metadata_type;
 
+    static const foffset_t file_metadata_size_align =
+        base_type::file_metadata_size_align;
+
+    static const foffset_t file_metadata_size =
+        base_type::file_metadata_size;
+
 private:
 
-    rwp_buffer _buffer;
+    push_buffer _buffer;
     global_struct_type _global_struct;
     s1b::uid_t _next_uid;
     foffset_t _next_data_offset;
@@ -117,6 +123,8 @@ private:
         IT metadata_end
     )
     {
+        align_file();
+
         for ( ; metadata_begin != metadata_end; metadata_begin++, _next_uid++)
         {
             // TODO consistency check: input uid matches
@@ -128,8 +136,8 @@ private:
 
             base_type::meta_adapter().set_uid(elem, _next_uid);
 
-            _buffer.seek(base_type::get_element_offset_unsafe(_next_uid));
-            _buffer.write_object(elem);
+            _buffer.write_object(elem); // TODO assert file_metadata_size
+            _buffer.skip(file_metadata_size_align - file_metadata_size);
 
             const foffset_t size = base_type::meta_adapter().
                 get_data_size(elem);
@@ -157,6 +165,7 @@ private:
         {
             _buffer.seek(align_size - 1);
             _buffer.write("", 1);
+            _buffer.sync();
         }
     }
 
@@ -203,7 +212,8 @@ private:
 
         base_type::meta_adapter().set_uid(elem, uid);
 
-        _buffer.write_object(elem);
+        _buffer.write_object(elem); // TODO assert file_metadata_size
+        _buffer.skip(file_metadata_size_align - file_metadata_size);
 
         data_size = base_type::meta_adapter().get_data_size(elem);
 
@@ -211,13 +221,11 @@ private:
         _next_data_offset = data_offset + base_type::
             compute_aligned_data_size(data_size);
 
-        _buffer.seek(base_type::get_element_offset_unsafe(_next_uid));
-
         return uid;
     }
 
     s1b::uid_t _get_last_uid(
-    ) const
+    )
     {
         try
         {
@@ -257,10 +265,8 @@ public:
         const path_string& filename,
         const global_struct_type& global_struct
     ) :
-        rwp_metadata_base<MetaAdapter>(),
-        _buffer(
-            filename,
-            S1B_OPEN_NEW),
+        rwp_metadata_base<MetaAdapter, push_buffer>(),
+        _buffer(filename, true),
         _global_struct(global_struct),
         _next_uid(FirstUID),
         _next_data_offset(0)
@@ -278,10 +284,8 @@ public:
         IT metadata_end,
         const global_struct_type& global_struct
     ) :
-        rwp_metadata_base<MetaAdapter>(),
-        _buffer(
-            filename,
-            S1B_OPEN_NEW),
+        rwp_metadata_base<MetaAdapter, push_buffer>(),
+        _buffer(filename, true),
         _global_struct(global_struct),
         _next_uid(FirstUID),
         _next_data_offset(0)
@@ -296,10 +300,8 @@ public:
     push_metadata(
         const path_string& filename
     ) :
-        rwp_metadata_base<MetaAdapter>(),
-        _buffer(
-            filename,
-            S1B_OPEN_WRITE),
+        rwp_metadata_base<MetaAdapter, push_buffer>(),
+        _buffer(filename, false),
         _global_struct(read_global_struct()),
         _next_uid(_get_last_uid() + 1),
         _next_data_offset(_get_data_size())
@@ -307,6 +309,7 @@ public:
         assert_header();
         assert_meta_check();
         // TODO assert valid size
+        align_file();
     }
 
     const path_string& filename(
@@ -322,7 +325,7 @@ public:
     }
 
     foffset_t get_size(
-    ) const
+    )
     {
         return _buffer.get_size();
     }

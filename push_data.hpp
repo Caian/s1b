@@ -24,8 +24,8 @@
 #include "macros.hpp"
 #include "open_mode.hpp"
 #include "mem_align.hpp"
-#include "rwp_buffer.hpp"
 #include "exceptions.hpp"
+#include "push_buffer.hpp"
 
 namespace s1b {
 
@@ -37,7 +37,7 @@ private:
 
 private:
 
-    rwp_buffer _buffer;
+    push_buffer _buffer;
     foffset_t _slot_size;
 
     foffset_t assert_slot_size(
@@ -62,9 +62,7 @@ public:
         const path_string& filename,
         bool create_new
     ) :
-        _buffer(
-            filename,
-            create_new ? S1B_OPEN_NEW : S1B_OPEN_WRITE),
+        _buffer(filename, create_new),
         _slot_size(assert_slot_size(_buffer.get_size()))
     {
         _buffer.seek(_slot_size);
@@ -95,7 +93,7 @@ public:
     }
 
     size_t get_size(
-    ) const
+    )
     {
         return _buffer.get_size();
     }
@@ -105,13 +103,13 @@ public:
         foffset_t size
     )
     {
-        _buffer.write(data, size);
-
+        const foffset_t aligned_size = mem_align::size<Align>(size);
         const foffset_t position = _slot_size;
 
-        _slot_size += mem_align::size<Align>(size);
+        _buffer.write(data, size);
+        _buffer.skip(aligned_size - size);
 
-        _buffer.seek(_slot_size);
+        _slot_size += aligned_size;
 
         return position;
     }
@@ -119,30 +117,7 @@ public:
     void align(
     )
     {
-        const foffset_t file_size = _buffer.get_size();
-
-        if (!mem_align::is_aligned<Align>(_slot_size))
-        {
-            EX3_THROW(misaligned_exception()
-                << actual_slot_size_ei(_slot_size)
-                << expected_alignment_ei(
-                    static_cast<foffset_t>(Align))
-                << file_name_ei(filename()));
-        }
-
-        if (_slot_size < file_size)
-        {
-            EX3_THROW(file_size_mismatch_exception()
-                << file_size_ei(file_size)
-                << file_position_ei(_slot_size)
-                << file_name_ei(filename()));
-        }
-
-        if (_slot_size > file_size)
-        {
-            _buffer.seek(_slot_size - 1);
-            _buffer.write("", 1);
-        }
+        _buffer.sync();
     }
 
     void sync(
