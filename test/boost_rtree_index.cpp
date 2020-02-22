@@ -454,9 +454,9 @@ S1B_TEST(EmptyBounds)
             initial_size, 1, size_increment);
 
         ASSERT_EQ(0, index.get_index()->size());
-        ASSERT_THROW(index.get_index()->bounds(),
+        ASSERT_THROW(index.get_index()->get_bounds(),
             s1b::empty_index_exception);
-        ASSERT_THROW(index.get_index()->bounds(key_min, key_max),
+        ASSERT_THROW(index.get_index()->get_bounds(key_min, key_max),
             s1b::empty_index_exception);
     }
     catch (const std::exception& e)
@@ -518,12 +518,12 @@ S1B_TEST(Bounds)
             initial_size, 1, size_increment);
 
         ASSERT_EQ(1000, index.get_index()->size());
-        ASSERT_NO_THROW(key_pair = index.get_index()->bounds());
+        ASSERT_NO_THROW(key_pair = index.get_index()->get_bounds());
         ASSERT_EQ(x_min, key_pair.first.x);
         ASSERT_EQ(x_max, key_pair.second.x);
         ASSERT_EQ(y_min, key_pair.first.y);
         ASSERT_EQ(y_max, key_pair.second.y);
-        ASSERT_NO_THROW(index.get_index()->bounds(key_min, key_max));
+        ASSERT_NO_THROW(index.get_index()->get_bounds(key_min, key_max));
         ASSERT_EQ(x_min, key_min.x);
         ASSERT_EQ(x_max, key_max.x);
         ASSERT_EQ(y_min, key_min.y);
