@@ -151,7 +151,7 @@ public:
         return _p_indices.get() + _num_indices;
     }
 
-    std::pair<indexed_type, indexed_type> range(
+    std::pair<indexed_type, indexed_type> get_range(
     ) const
     {
         walk_iterator first = begin();
@@ -168,12 +168,12 @@ public:
         return std::make_pair(*first, *last);
     }
 
-    void range(
+    void get_range(
         indexed_type& index_min,
         indexed_type& index_max
     ) const
     {
-        std::pair<indexed_type, indexed_type> minmax = range();
+        std::pair<indexed_type, indexed_type> minmax = get_range();
         index_min = minmax.first;
         index_max = minmax.second;
     }

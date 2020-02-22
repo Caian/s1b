@@ -188,7 +188,7 @@ public:
         return _rtree.end();
     }
 
-    std::pair<Key, Key> bounds(
+    std::pair<Key, Key> get_bounds(
     ) const
     {
         if (_rtree.size() == 0)
@@ -203,12 +203,12 @@ public:
         return std::make_pair(point_min, point_max);
     }
 
-    void bounds(
+    void get_bounds(
         Key& point_min,
         Key& point_max
     ) const
     {
-        boost::tie(point_min, point_max) = bounds();
+        boost::tie(point_min, point_max) = get_bounds();
     }
 
     template<typename Predicates>

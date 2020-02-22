@@ -462,9 +462,9 @@ S1B_TEST(EmptyRange)
             initial_size, 1, size_increment);
 
         ASSERT_EQ(0, index.get_index()->size());
-        ASSERT_THROW(index.get_index()->range(),
+        ASSERT_THROW(index.get_index()->get_range(),
             s1b::empty_index_exception);
-        ASSERT_THROW(index.get_index()->range(index_min, index_max),
+        ASSERT_THROW(index.get_index()->get_range(index_min, index_max),
             s1b::empty_index_exception);
     }
     catch (const std::exception& e)
@@ -528,7 +528,7 @@ S1B_TEST(Range)
             initial_size, 1, size_increment);
 
         ASSERT_EQ(1000, index.get_index()->size());
-        ASSERT_NO_THROW(index_pair = index.get_index()->range());
+        ASSERT_NO_THROW(index_pair = index.get_index()->get_range());
         idx_min = index_pair.first.second - 1;
         idx_max = index_pair.second.second - 1;
         ASSERT_EQ(key_min.x, index_pair.first.first.x);
@@ -543,7 +543,7 @@ S1B_TEST(Range)
         ASSERT_EQ(meta_vector[idx_min].value2, index_pair.first.first.value2);
         ASSERT_EQ(meta_vector[idx_max].x, index_pair.second.first.x);
         ASSERT_EQ(meta_vector[idx_max].value2, index_pair.second.first.value2);
-        ASSERT_NO_THROW(index.get_index()->range(index_min, index_max));
+        ASSERT_NO_THROW(index.get_index()->get_range(index_min, index_max));
         idx_min = index_min.second - 1;
         idx_max = index_max.second - 1;
         ASSERT_EQ(key_min.x, index_min.first.x);
