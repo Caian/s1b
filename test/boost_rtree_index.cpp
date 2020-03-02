@@ -23,6 +23,7 @@
 #include "s1b_test.hpp"
 #include "rtree_index_test.hpp"
 
+#include <s1b/queries/at.hpp>
 #include <s1b/traits/indexed_type.hpp>
 #include <s1b/traits/walk_iterator.hpp>
 #include <s1b/traits/query_iterator.hpp>
@@ -1343,6 +1344,140 @@ S1B_TEST(QuerySomeMiddle)
             ASSERT_LE(key_min.y, y);
             ASSERT_GE(key_max.y, y);
         }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(AtEmpty)
+
+    static const size_t initial_size = 1024;
+    static const size_t size_increment = 32096;
+
+    std::vector<test_metadata> meta_vector;
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        test_index index(s1b_file_name, metadata,
+            initial_size, 1, size_increment);
+
+        rtree_test_key key;
+        key.x = 10;
+
+        ASSERT_EQ(0, index.get_index()->size());
+        ASSERT_THROW(s1b::queries::at(*index.get_index(), key),
+            s1b::not_found_exception);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(AtOneMiddle)
+
+    static const size_t initial_size = 1024;
+    static const size_t size_increment = 32096;
+
+    std::vector<test_metadata> meta_vector;
+
+    int i_middle = 123;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+
+        if (i-1 == i_middle)
+        {
+            meta.x += 0.123;
+            meta.y -= 0.123;
+        }
+
+        meta_vector.push_back(meta);
+    }
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_query_iterator iterator;
+
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        test_index index(s1b_file_name, metadata,
+            initial_size, 1, size_increment);
+
+        rtree_test_key lower_key(meta_vector[i_middle]);
+
+        ASSERT_EQ(1000, index.get_index()->size());
+        ASSERT_NO_THROW(iterator = s1b::queries::at(*index.get_index(),
+            lower_key));
+        s1b::uid_t idx_min = iterator->second - 1;
+        ASSERT_LE(0, idx_min);
+        ASSERT_GT(1000, idx_min);
+        float x = iterator->first.template get<0>();
+        float y = iterator->first.template get<1>();
+        ASSERT_EQ(lower_key.x, x);
+        ASSERT_EQ(lower_key.y, y);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(AtSomeMiddle)
+
+    static const size_t initial_size = 1024;
+    static const size_t size_increment = 32096;
+
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    rtree_test_key key(meta_vector[300]);
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_query_iterator iterator_min, iterator_max;
+
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        test_index index(s1b_file_name, metadata,
+            initial_size, 1, size_increment);
+
+        ASSERT_EQ(1000, index.get_index()->size());
+        ASSERT_THROW(s1b::queries::at(*index.get_index(), key),
+            s1b::multiple_results_exception);
     }
     catch (const std::exception& e)
     {
