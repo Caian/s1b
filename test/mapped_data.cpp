@@ -673,6 +673,127 @@ S1B_TEST(ReadWriteMultipleSlotFromMetadata)
     }
 }
 
+S1B_TEST(ReadWriteMultipleSlotObjectsFromMetadata)
+
+    std::vector<test_metadata> meta_vector;
+    std::vector<float> test_data;
+    float* p_data;
+    const float* cp_data;
+    s1b::foffset_t prev_off = -1;
+    s1b::foffset_t off;
+    s1b::foffset_t size;
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end(), s1b::S1B_HUGETLB_OFF);
+
+        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5,
+            s1b::S1B_HUGETLB_OFF);
+        const s1b::mapped_data& cdata = data;
+        ASSERT_TRUE(data.can_write());
+        ASSERT_EQ(5, data.num_slots());
+
+        for (int i = 1; i <= 1000; i++, prev_off = off)
+        {
+            for (int k = 0; k < 5; k++)
+            {
+                size = meta_vector[i-1].size / sizeof(float);
+                ASSERT_NO_THROW(off = metadata.get_data_offset(
+                    meta_vector[i-1].uid));
+                ASSERT_GT(off, prev_off);
+
+                ASSERT_NO_THROW(p_data = data.get_ptr<float>(off, k));
+                ASSERT_TRUE(static_cast<float*>(0) != p_data);
+
+                test_data.resize(size);
+                for (int j = 0; j < size; j++)
+                {
+                    test_data[j] = static_cast<float>(32 +
+                        ((size + k + j + 20) % (127-32)));
+                }
+
+                std::copy(&test_data[0], &test_data[0] + size, p_data);
+
+                ASSERT_NO_THROW(cp_data = cdata.get_ptr<float>(off, k));
+                ASSERT_TRUE(static_cast<float*>(0) != cp_data);
+
+                for (int j = 0; j < size; j++)
+                    ASSERT_TRUE(test_data[j] == cp_data[j]);
+            }
+        }
+
+        ASSERT_NO_THROW(data.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename,
+            false, s1b::S1B_HUGETLB_OFF);
+
+        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_DEFAULT,
+            metadata, 0, s1b::S1B_HUGETLB_OFF);
+        const s1b::mapped_data& cdata = data;
+        ASSERT_FALSE(data.can_write());
+        ASSERT_EQ(5, data.num_slots());
+
+        prev_off = -1;
+
+        for (int i = 1; i <= 1000; i++, prev_off = off)
+        {
+            for (int k = 0; k < 5; k++)
+            {
+                size = meta_vector[i-1].size / sizeof(float);
+                ASSERT_NO_THROW(off = metadata.get_data_offset(
+                    meta_vector[i-1].uid));
+                ASSERT_GT(off, prev_off);
+
+                ASSERT_NO_THROW(p_data = data.get_ptr<float>(off, k));
+                ASSERT_TRUE(static_cast<float*>(0) != p_data);
+
+                test_data.resize(size);
+                for (int j = 0; j < size; j++)
+                {
+                    test_data[j] = static_cast<float>(32 +
+                        ((size + k + j + 20) % (127-32)));
+                }
+
+                ASSERT_NO_THROW(cp_data = cdata.get_ptr<float>(off, k));
+                ASSERT_TRUE(static_cast<float*>(0) != cp_data);
+
+                for (int j = 0; j < size; j++)
+                    ASSERT_TRUE(test_data[j] == cp_data[j]);
+            }
+        }
+
+        ASSERT_NO_THROW(data.sync());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
 void _RwpCompatCreateNew(const char* filename, bool can_write)
 {
     std::vector<test_metadata> meta_vector;

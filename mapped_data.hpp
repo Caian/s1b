@@ -179,6 +179,24 @@ public:
         return _buffer.can_write();
     }
 
+    template <typename T>
+    const T* get_ptr(
+        size_t offset,
+        unsigned int slot=0
+    ) const
+    {
+        return reinterpret_cast<const T*>(get_address(offset, slot));
+    }
+
+    template <typename T>
+    T* get_ptr(
+        size_t offset,
+        unsigned int slot=0
+    )
+    {
+        return reinterpret_cast<T*>(get_address(offset, slot));
+    }
+
     const char* get_address(
         size_t offset,
         unsigned int slot=0
