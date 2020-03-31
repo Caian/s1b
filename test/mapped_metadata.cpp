@@ -556,7 +556,6 @@ S1B_TEST(ReadOnNewFile)
     }
 }
 
-
 S1B_TEST(WriteOnWriteableFile)
 
     static const s1b::uid_t uid_0 = s1b::FirstUID + 0;
