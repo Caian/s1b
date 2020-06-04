@@ -71,8 +71,16 @@ private:
 
         if (data_size > 0)
         {
-            _buffer.seek(data_size - 1);
-            _buffer.write("", 1);
+            const foffset_t aligned_position = data_size - 1;
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+            _buffer.seek(aligned_position);
+#endif
+            _buffer.write("",
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                aligned_position,
+#endif
+                1);
         }
 
         return num_slots;
@@ -197,7 +205,7 @@ public:
         foffset_t position,
         foffset_t size,
         unsigned int slot=0
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         if (!mem_align::is_aligned<Align>(position))
         {
@@ -219,8 +227,14 @@ public:
         position += slot * _slot_size;
 
         // TODO assert seek returns
+#if defined(S1B_DISABLE_ATOMIC_RW)
         _buffer.seek(position);
-        _buffer.read(data, size, true, true);
+#endif
+        _buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            size, true, true);
     }
 
     void write(
@@ -250,8 +264,14 @@ public:
         position += slot * _slot_size;
 
         // TODO assert seek returns
+#if defined(S1B_DISABLE_ATOMIC_RW)
         _buffer.seek(position);
-        _buffer.write(data, size);
+#endif
+        _buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            size);
     }
 
     foffset_t push(
@@ -279,16 +299,30 @@ public:
         }
 
         // TODO assert seek returns
+#if defined(S1B_DISABLE_ATOMIC_RW)
         _buffer.seek(position);
-        _buffer.write(data, size);
+#endif
+        _buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            size);
 
         const foffset_t total_size = position + size;
         const foffset_t total_aligned = mem_align::size<Align>(total_size);
 
         if (total_aligned > total_size)
         {
-            _buffer.seek(total_aligned - 1);
-            _buffer.write("", 1);
+            const foffset_t aligned_position = total_aligned - 1;
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+            _buffer.seek(aligned_position);
+#endif
+            _buffer.write("",
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                aligned_position,
+#endif
+                1);
         }
 
         _slot_size = total_aligned;

@@ -22,7 +22,9 @@
 #include "types.hpp"
 #include "macros.hpp"
 #include "open_mode.hpp"
-#include "rwp_buffer.hpp"
+#include "exceptions.hpp"
+#include "path_string.hpp"
+#include "os/functions.hpp"
 
 #include <algorithm>
 
@@ -32,11 +34,16 @@ class push_buffer
 {
 private:
 
+    /** The permission when creating file, user read+write. */
+    static const os::mode_type file_sharing_mode = os::functions::FS_RU |
+                                                   os::functions::FS_WU;
+
     static const foffset_t BufferSize = S1B_PUSH_BUFFER_SIZE;
 
 private:
 
-    rwp_buffer _buffer;
+    path_string _filename;
+    os::fd_type _fd;
     foffset_t _buffer_offset;
     char* _data_buffer;
 
@@ -46,7 +53,8 @@ private:
         if (_buffer_offset == 0)
             return;
 
-        _buffer.write(_data_buffer, _buffer_offset);
+        os::functions::write(_fd, _data_buffer, _buffer_offset);
+
         _buffer_offset = 0;
     }
 
@@ -56,25 +64,30 @@ public:
         const path_string& filename,
         bool create_new
     ) :
-        _buffer(
-            filename,
-            create_new ? S1B_OPEN_NEW : S1B_OPEN_WRITE),
+        _filename(filename),
+        _fd(os::functions::open(
+            filename.c_str(),
+            os::functions::FO_RW |
+            (create_new ?
+                (os::functions::FO_Truncate | os::functions::FO_Create) :
+                 0),
+            file_sharing_mode)),
         _buffer_offset(0),
         _data_buffer(new char[BufferSize])
     {
-        _buffer.seek(_buffer.get_size());
+        seek(get_size());
     }
 
     const path_string& filename(
     ) const
     {
-        return _buffer.filename();
+        return _filename;
     }
 
     bool can_write(
     ) const
     {
-        return _buffer.can_write();
+        return true;
     }
 
     foffset_t seek(
@@ -82,7 +95,16 @@ public:
     )
     {
         flush();
-        return _buffer.seek(position);
+
+        try
+        {
+            return os::functions::seek(_fd, position);
+        }
+        catch (const io_exception& e)
+        {
+            EX3_RETHROW(e
+                << file_name_ei(_filename));
+        }
     }
 
     size_t read(
@@ -92,8 +114,31 @@ public:
         bool required
     )
     {
+        size_t sr;
+
         flush();
-        return _buffer.read(buf, count, complete, required);
+
+        try
+        {
+            sr = os::functions::read(_fd, buf, count);
+        }
+        catch (const io_exception& e)
+        {
+            EX3_RETHROW(e
+                << file_name_ei(_filename));
+        }
+
+        // Check if the read was partial or not did not happen when it was
+        // required.
+        if ((complete && sr != 0 && sr != count) || (required && sr == 0))
+        {
+            EX3_THROW(incomplete_read_exception()
+                << expected_size_ei(count)
+                << actual_size_ei(sr)
+                << file_name_ei(_filename));
+        }
+
+        return sr;
     }
 
     void write(
@@ -127,6 +172,28 @@ public:
         }
     }
 
+    template <typename T>
+    size_t read_object(
+        T& o,
+        bool required
+    )
+    {
+        const size_t s = sizeof(T);
+        char* const po = reinterpret_cast<char*>(&o);
+        return read(po, s, true, required);
+    }
+
+    template <typename T>
+    size_t write_object(
+        const T& o
+    )
+    {
+        const size_t s = sizeof(T);
+        const char* const po = reinterpret_cast<const char*>(&o);
+        write(po, s);
+        return s;
+    }
+
     void skip(
         foffset_t size
     )
@@ -150,45 +217,34 @@ public:
         }
     }
 
-    template <typename T>
-    size_t read_object(
-        T& o,
-        bool required
-    )
-    {
-        flush();
-        return _buffer.read_object(o, required);
-    }
-
-    template <typename T>
-    size_t write_object(
-        const T& o
-    )
-    {
-        const size_t s = sizeof(T);
-        const char* const po = reinterpret_cast<const char*>(&o);
-        write(po, s);
-        return s;
-    }
-
     size_t get_size(
     )
     {
         flush();
-        return _buffer.get_size();
+
+        try
+        {
+            return os::functions::fsize(_fd);
+        }
+        catch (const io_exception& e)
+        {
+            EX3_RETHROW(e
+                << file_name_ei(_filename));
+        }
     }
 
     void sync(
     )
     {
         flush();
-        _buffer.sync();
+        os::functions::fsync(_fd);
     }
 
     virtual ~push_buffer(
     )
     {
         delete[] _data_buffer;
+        os::functions::close_unchecked(_fd);
     }
 };
 

@@ -63,13 +63,13 @@ private:
     global_struct_type _global_struct;
 
     void assert_header(
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         base_type::assert_header(_buffer);
     }
 
     void assert_meta_check(
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         base_type::assert_meta_check(_buffer);
     }
@@ -89,7 +89,7 @@ private:
     }
 
     global_struct_type read_global_struct(
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         return base_type::read_global_struct(_buffer);
     }
@@ -105,7 +105,7 @@ private:
         s1b::uid_t uid,
         file_metadata_type& elem,
         bool required
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         return base_type::read_file_element(_buffer, uid, elem, required);
     }
@@ -130,8 +130,17 @@ private:
 
             base_type::meta_adapter().set_uid(elem, uid);
 
-            _buffer.seek(base_type::get_element_offset_unsafe(uid));
-            _buffer.write_object(elem);
+            const foffset_t element_offset = base_type::
+                get_element_offset_unsafe(uid);
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+            _buffer.seek(element_offset);
+#endif
+            _buffer.write_object(elem
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                , element_offset
+#endif
+                );
 
             const foffset_t size = base_type::meta_adapter().
                 get_data_size(elem);
@@ -160,14 +169,22 @@ private:
 
         if (align_size > file_size)
         {
-            _buffer.seek(align_size - 1);
-            _buffer.write("", 1);
+            const foffset_t aligned_position = align_size - 1;
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+            _buffer.seek(aligned_position);
+#endif
+            _buffer.write("",
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                aligned_position,
+#endif
+                1);
         }
     }
 
     foffset_t get_data_size(
         s1b::uid_t& last_uid
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         // Get the data offset and size of the last element and compute the
         // total size of the data file
@@ -233,8 +250,17 @@ private:
 
         base_type::meta_adapter().set_uid(elem, uid);
 
-        _buffer.seek(base_type::get_element_offset_unsafe(uid));
-        _buffer.write_object(elem);
+        const foffset_t element_offset = base_type::
+            get_element_offset_unsafe(uid);
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        _buffer.seek(element_offset);
+#endif
+        _buffer.write_object(elem
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            , element_offset
+#endif
+            );
 
         align_file(uid);
 
@@ -335,7 +361,7 @@ public:
         s1b::uid_t uid,
         metadata_type& meta,
         foffset_t& data_offset
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         file_metadata_type elem;
 
@@ -351,7 +377,7 @@ public:
     bool read(
         s1b::uid_t uid,
         metadata_type& meta
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         foffset_t data_offset;
         return read(uid, meta, data_offset);
@@ -360,7 +386,7 @@ public:
     bool read_data_offset(
         s1b::uid_t uid,
         foffset_t& data_offset
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         metadata_type meta;
         return read(uid, meta, data_offset);
@@ -368,7 +394,7 @@ public:
 
     foffset_t read_data_offset(
         const metadata_type& elem
-    )
+    ) S1B_READ_METHOD_QUALIFIER
     {
         const s1b::uid_t uid = base_type::meta_adapter().get_uid(elem);
 
@@ -412,8 +438,17 @@ public:
         new_elem.data_offset = elem.data_offset;
         new_elem.clean_bit = elem.clean_bit;
 
-        _buffer.seek(base_type::get_element_offset_unsafe(uid));
-        _buffer.write_object(new_elem);
+        const foffset_t element_offset = base_type::
+            get_element_offset_unsafe(uid);
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        _buffer.seek(element_offset);
+#endif
+        _buffer.write_object(new_elem
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            , element_offset
+#endif
+            );
     }
 
     s1b::uid_t push(

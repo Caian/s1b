@@ -32,6 +32,8 @@
 #include "traits/metadata_type.hpp"
 #include "traits/global_struct_type.hpp"
 
+#include "helpers/seekrw_proxy.hpp"
+
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -41,11 +43,25 @@ namespace s1b {
 // TODO assert meta check
 
 template <typename MetaAdapter>
-class push_metadata : public rwp_metadata_base<MetaAdapter, push_buffer>
+class push_metadata : public rwp_metadata_base<MetaAdapter,
+#if defined(S1B_DISABLE_ATOMIC_RW)
+    push_buffer
+#else
+    s1b::helpers::seekrw_proxy<push_buffer>
+#endif
+    >
 {
 public:
 
-    typedef rwp_metadata_base<MetaAdapter, push_buffer> base_type;
+    typedef
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        push_buffer
+#else
+        s1b::helpers::seekrw_proxy<push_buffer>
+#endif
+        meta_buffer_type;
+
+    typedef rwp_metadata_base<MetaAdapter, meta_buffer_type> base_type;
 
     typedef typename base_type::metadata_type metadata_type;
 
@@ -83,14 +99,24 @@ private:
     void create_header(
     )
     {
-        base_type::create_header(_buffer);
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        meta_buffer_type& proxy = _buffer;
+#else
+        meta_buffer_type proxy = _buffer;
+#endif
+        base_type::create_header(proxy);
 
     }
 
     void create_meta_check(
     )
     {
-        base_type::create_meta_check(_buffer);
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        meta_buffer_type& proxy = _buffer;
+#else
+        meta_buffer_type proxy = _buffer;
+#endif
+        base_type::create_meta_check(proxy);
 
     }
 
@@ -104,7 +130,12 @@ private:
         const global_struct_type& glob
     )
     {
-        base_type::write_global_struct(_buffer, glob);
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        meta_buffer_type& proxy = _buffer;
+#else
+        meta_buffer_type proxy = _buffer;
+#endif
+        base_type::write_global_struct(proxy, glob);
     }
 
     bool read_file_element(
@@ -264,7 +295,7 @@ public:
         const path_string& filename,
         const global_struct_type& global_struct
     ) :
-        rwp_metadata_base<MetaAdapter, push_buffer>(),
+        rwp_metadata_base<MetaAdapter, meta_buffer_type>(),
         _buffer(filename, true),
         _global_struct(global_struct),
         _next_uid(FirstUID),
@@ -283,7 +314,7 @@ public:
         IT metadata_end,
         const global_struct_type& global_struct
     ) :
-        rwp_metadata_base<MetaAdapter, push_buffer>(),
+        rwp_metadata_base<MetaAdapter, meta_buffer_type>(),
         _buffer(filename, true),
         _global_struct(global_struct),
         _next_uid(FirstUID),
@@ -299,7 +330,7 @@ public:
     push_metadata(
         const path_string& filename
     ) :
-        rwp_metadata_base<MetaAdapter, push_buffer>(),
+        rwp_metadata_base<MetaAdapter, meta_buffer_type>(),
         _buffer(filename, false),
         _global_struct(read_global_struct()),
         _next_uid(_get_last_uid() + 1),
