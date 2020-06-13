@@ -23,6 +23,8 @@
 
 #include <s1b/rwp_buffer.hpp>
 
+#include <omp.h>
+
 namespace {
 
 // TODO unlink
@@ -429,5 +431,79 @@ S1B_TEST(MixedRWOperations)
         FAIL();
     }
 }
+
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+S1B_TEST(ParallelIOTest)
+
+    const int N = 10000;
+
+    try
+    {
+        s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW);
+        ASSERT_TRUE(buffer.can_write());
+
+        int num_threads = 0;
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 0; i < N; i++)
+        {
+            const s1b::foffset_t position = i;
+
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            {
+                const char value = 0;
+                buffer.write(&value, position, 1);
+            }
+
+            for (size_t j = 0; j < 100; j++)
+            {
+                char value;
+                buffer.read(&value, position, 1, true, true);
+                value++;
+                buffer.write(&value, position, 1);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+        ASSERT_NO_THROW(buffer.sync());
+
+        std::vector<char> result(N);
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 0; i < N; i++)
+        {
+            const s1b::foffset_t position = i;
+
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            for (size_t j = 0; j < 200; j++)
+            {
+                buffer.read(&result[i], position, 1, true, true);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+
+        for (size_t i = 0; i < N; i++)
+        {
+            ASSERT_EQ(100, result[i]);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+#endif
 
 }

@@ -28,6 +28,8 @@
 
 #include <vector>
 
+#include <omp.h>
+
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
@@ -1367,5 +1369,94 @@ S1B_TEST(PushCompatCreateNewAndOpenWrite)
 
     _PushCompatCreateNew(s1b_file_name, true);
 }
+
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+S1B_TEST(ParallelIOTest)
+
+    const int N = 10000;
+
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= N; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    try
+    {
+        test_rwp_metadata metadata(s1b_file_name,
+            meta_vector.begin(), meta_vector.end());
+        ASSERT_TRUE(metadata.can_write());
+
+        int num_threads = 0;
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 1; i <= N; i++)
+        {
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            for (size_t j = 0; j < 100; j++)
+            {
+                test_metadata meta;
+                metadata.read(i, meta);
+                meta.x++;
+                meta.y++;
+                meta.value1++;
+                meta.value2++;
+                metadata.write(meta);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+        ASSERT_NO_THROW(metadata.sync());
+
+        std::vector<test_metadata> result(N);
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 0; i < N; i++)
+        {
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            for (size_t j = 0; j < 200; j++)
+            {
+                metadata.read(i+1, result[i]);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+
+        for (size_t i = 0; i < N; i++)
+        {
+            for (size_t j = 0; j < 100; j++)
+            {
+                meta_vector[i].x++;
+                meta_vector[i].y++;
+                meta_vector[i].value1++;
+                meta_vector[i].value2++;
+            }
+
+            ASSERT_EQ(meta_vector[i].x     , result[i].x     );
+            ASSERT_EQ(meta_vector[i].y     , result[i].y     );
+            ASSERT_EQ(meta_vector[i].value1, result[i].value1);
+            ASSERT_EQ(meta_vector[i].value2, result[i].value2);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+#endif
 
 }

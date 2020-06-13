@@ -19,10 +19,10 @@ build_and_test_dir() {
         test_name=${test_name%.*}
         test_out="$SESS_DIR/${test_name}.o"
         echo "$test_cpp -> $test_out"
-        $CXX $test_cpp $CXXFLAGS $COVFLAGS $flags -c -o "${test_out}" || exit 1
+        $CXX $test_cpp $CXXFLAGS $COVFLAGS $flags -fopenmp -c -o "${test_out}" || exit 1
     done
     echo "Linking..."
-    $CXX "$SESS_DIR"/*.o $COVFLAGS $LDFLAGS -o "$SESS_DIR/test" || exit 1
+    $CXX "$SESS_DIR"/*.o $COVFLAGS $LDFLAGS -fopenmp -o "$SESS_DIR/test" || exit 1
     (cd "$SESS_DIR" && ./test) || exit 1
 }
 
