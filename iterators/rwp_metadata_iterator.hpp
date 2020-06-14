@@ -23,6 +23,8 @@
 
 #include "transforms/get_rwp_metadata.hpp"
 
+#include <s1b/macros.hpp>
+
 #include <boost/iterator/transform_iterator.hpp>
 
 namespace s1b {
@@ -45,7 +47,7 @@ struct rwp_metadata_iterator_helper
     typedef type ctype;
 
     static type begin(
-        Metadata& metadata
+        S1B_READ_METHOD_QUALIFIER Metadata& metadata
     )
     {
         transform_type transform(metadata);

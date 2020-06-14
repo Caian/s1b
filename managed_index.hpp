@@ -218,6 +218,26 @@ public:
     {
     }
 
+    template <typename Adapter>
+    managed_index(
+        const path_string& filename,
+        const rwp_metadata<Adapter>& metadata,
+        size_t initial_size,
+        unsigned int resize_attempts,
+        size_t size_increment
+    ) :
+        _buffer(filename, initial_size, create_initializer(
+            metadata.uid_begin(),
+            metadata.uid_end(),
+            iterators::rwp_metadata_iterator_helper<
+                rwp_metadata<Adapter>
+                >::begin(metadata)
+        ), resize_attempts, size_increment),
+        _p_data(reinterpret_cast<const MANAGED_DATA*>(
+            _buffer.data()))
+    {
+    }
+
     managed_index(
         const path_string& filename
     ) :
