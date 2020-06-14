@@ -34,6 +34,7 @@
 #include <s1b/traits/query_iterator.hpp>
 
 #include <boost/interprocess/offset_ptr.hpp>
+#include <boost/uuid/uuid.hpp>
 
 #include <algorithm>
 #include <string>
@@ -50,6 +51,7 @@ private:
         boost::interprocess::offset_ptr<char> p_id;
         boost::interprocess::offset_ptr<int> p_id_sz;
         boost::interprocess::offset_ptr<Index> p_index;
+        boost::interprocess::offset_ptr<boost::uuids::uuid> p_meta_uuid;
     };
 
     template <typename ITU, typename ITM>
@@ -58,15 +60,18 @@ private:
         ITU _uid_begin;
         ITU _uid_end;
         ITM _metadata_begin;
+        boost::uuids::uuid _meta_uuid;
 
         INDEX_INITIALIZER(
             ITU uid_begin,
             ITU uid_end,
-            ITM metadata_begin
+            ITM metadata_begin,
+            boost::uuids::uuid meta_uuid
         ) :
             _uid_begin(uid_begin),
             _uid_end(uid_end),
-            _metadata_begin(metadata_begin)
+            _metadata_begin(metadata_begin),
+            _meta_uuid(meta_uuid)
         {
         }
 
@@ -89,7 +94,8 @@ private:
             MANAGED_DATA* p_data = mfile.construct<MANAGED_DATA>(
                 boost::interprocess::anonymous_instance)();
 
-            // Construct the verification string and the index itself
+            // Construct the verification string, attach que metadata uuid and
+            // construct the index itself
 
             p_data->p_id_sz = reinterpret_cast<int*>(
                 allocator.allocate(sizeof(int)).get());
@@ -100,6 +106,9 @@ private:
 
             std::copy(id.begin(), id.end(), p_data->p_id);
             p_data->p_id[id.size()] = '\0';
+
+            p_data->p_meta_uuid = mfile.construct<boost::uuids::uuid>(
+                boost::interprocess::anonymous_instance)(_meta_uuid);
 
             p_data->p_index = mfile.construct<Index>(boost::interprocess::
                 anonymous_instance)(_uid_begin, _uid_end,
@@ -164,11 +173,12 @@ private:
     static INDEX_INITIALIZER<ITU, ITM> create_initializer(
         ITU uid_begin,
         ITU uid_end,
-        ITM metadata_begin
+        ITM metadata_begin,
+        const boost::uuids::uuid& meta_uuid
     )
     {
         return INDEX_INITIALIZER<ITU, ITM>(uid_begin,
-            uid_end, metadata_begin);
+            uid_end, metadata_begin, meta_uuid);
     }
 
 private:
@@ -191,8 +201,8 @@ public:
             metadata.uid_end(),
             iterators::mapped_metadata_iterator_helper<
                 mapped_metadata<Adapter>
-                >::begin(metadata)
-            ), resize_attempts, size_increment),
+                >::begin(metadata),
+            metadata.file_uuid()), resize_attempts, size_increment),
         _p_data(reinterpret_cast<const MANAGED_DATA*>(
             _buffer.data()))
     {
@@ -211,8 +221,8 @@ public:
             metadata.uid_end(),
             iterators::rwp_metadata_iterator_helper<
                 rwp_metadata<Adapter>
-                >::begin(metadata)
-        ), resize_attempts, size_increment),
+                >::begin(metadata),
+            metadata.file_uuid()), resize_attempts, size_increment),
         _p_data(reinterpret_cast<const MANAGED_DATA*>(
             _buffer.data()))
     {
@@ -231,8 +241,8 @@ public:
             metadata.uid_end(),
             iterators::rwp_metadata_iterator_helper<
                 rwp_metadata<Adapter>
-                >::begin(metadata)
-        ), resize_attempts, size_increment),
+                >::begin(metadata),
+            metadata.file_uuid()), resize_attempts, size_increment),
         _p_data(reinterpret_cast<const MANAGED_DATA*>(
             _buffer.data()))
     {
@@ -270,6 +280,12 @@ public:
     ) const
     {
         return _p_data->p_id.get();
+    }
+
+    const boost::uuids::uuid& get_metadata_uuid(
+    ) const
+    {
+        return *_p_data->p_meta_uuid;
     }
 
     size_t size(
