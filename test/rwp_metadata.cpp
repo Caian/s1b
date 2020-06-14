@@ -1261,10 +1261,102 @@ S1B_TEST(MixedRWPOperations)
     }
 }
 
+S1B_TEST(UuidIsUniqueAndValid)
+
+    boost::uuids::uuid uuid1, uuid2, uuid3, uuid4;
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 10; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    try
+    {
+        test_rwp_metadata metadata(s1b_file_name);
+        ASSERT_NO_THROW(uuid1 = metadata.file_uuid());
+        ASSERT_FALSE(uuid1.is_nil());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        test_rwp_metadata metadata(s1b_file_name);
+        ASSERT_NO_THROW(uuid2 = metadata.file_uuid());
+        ASSERT_FALSE(uuid2.is_nil());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    ASSERT_NE(uuid1, uuid2);
+
+    try
+    {
+        test_rwp_metadata metadata(s1b_file_name,
+            meta_vector.begin(), meta_vector.end());
+        ASSERT_NO_THROW(uuid3 = metadata.file_uuid());
+        ASSERT_FALSE(uuid3.is_nil());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    ASSERT_NE(uuid1, uuid3);
+    ASSERT_NE(uuid2, uuid3);
+
+    try
+    {
+        test_rwp_metadata metadata(s1b_file_name, false);
+        ASSERT_NO_THROW(uuid4 = metadata.file_uuid());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    ASSERT_EQ(uuid3, uuid4);
+
+    try
+    {
+        test_rwp_metadata metadata(s1b_file_name, true);
+        ASSERT_NO_THROW(uuid4 = metadata.file_uuid());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    ASSERT_EQ(uuid3, uuid4);
+}
+
 void _MappedCompatCreateNew(const char* filename, bool can_write)
 {
     std::vector<test_metadata> meta_vector;
     std::vector<s1b::foffset_t> off_vector;
+    boost::uuids::uuid uuid;
 
     for (int i = 1; i <= 1000; i++)
     {
@@ -1277,6 +1369,7 @@ void _MappedCompatCreateNew(const char* filename, bool can_write)
     {
         test_mapped_metadata metadata(filename, meta_vector.begin(),
             meta_vector.end(), s1b::S1B_HUGETLB_OFF);
+        ASSERT_NO_THROW(uuid = metadata.file_uuid());
         for (int i = 1; i <= 1000; i++)
         {
             ASSERT_NO_THROW(off_vector.push_back(
@@ -1298,6 +1391,7 @@ void _MappedCompatCreateNew(const char* filename, bool can_write)
         s1b::foffset_t offset;
         test_rwp_metadata metadata(filename, can_write);
         ASSERT_EQ(can_write, metadata.can_write());
+        ASSERT_EQ(uuid, metadata.file_uuid());
         for (int i = 1; i <= 1000; i++)
         {
             ASSERT_TRUE(metadata.read(i, meta));
@@ -1334,6 +1428,7 @@ S1B_TEST(MappedCompatCreateNewAndOpenWrite)
 void _PushCompatCreateNew(const char* filename, bool can_write)
 {
     std::vector<test_metadata> meta_vector;
+    boost::uuids::uuid uuid;
 
     for (int i = 1; i <= 1000; i++)
     {
@@ -1347,6 +1442,7 @@ void _PushCompatCreateNew(const char* filename, bool can_write)
         test_global_data glob;
         test_push_metadata metadata(filename, meta_vector.begin(),
             meta_vector.end(), glob);
+        ASSERT_NO_THROW(uuid = metadata.file_uuid());
         for (int i = 1001; i <= 1010; i++)
         {
             test_metadata meta;
@@ -1371,6 +1467,7 @@ void _PushCompatCreateNew(const char* filename, bool can_write)
         s1b::foffset_t offset;
         test_rwp_metadata metadata(filename, can_write);
         ASSERT_EQ(can_write, metadata.can_write());
+        ASSERT_EQ(uuid, metadata.file_uuid());
         for (int i = 1; i <= 500; i++)
         {
             ASSERT_TRUE(metadata.read(i, meta));

@@ -23,6 +23,9 @@
 #include "macros.hpp"
 #include "exceptions.hpp"
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
 #include <algorithm>
 
 namespace s1b {
@@ -30,16 +33,17 @@ namespace s1b {
 #pragma pack(push, 4)
 struct meta_file_header
 {
-    char         magic[8]; //  0 - 7
-    unsigned int one;      //  8 - 11
-    unsigned int uintsz;   // 12 - 15
-    unsigned int fofsz;    // 16 - 19
-    unsigned int version;  // 20 - 23
-    unsigned int revision; // 24 - 27
-    unsigned int align;    // 28 - 31
-    unsigned int checksz;  // 32 - 35
-    unsigned int metasz;   // 36 - 39
-    unsigned int globsz;   // 40 - 44
+    char               magic[8]; //  0 - 7
+    unsigned int       one;      //  8 - 11
+    unsigned int       uintsz;   // 12 - 15
+    unsigned int       fofsz;    // 16 - 19
+    unsigned int       version;  // 20 - 23
+    unsigned int       revision; // 24 - 27
+    unsigned int       align;    // 28 - 31
+    unsigned int       checksz;  // 32 - 35
+    unsigned int       metasz;   // 36 - 39
+    unsigned int       globsz;   // 40 - 44
+    boost::uuids::uuid uuid;     // 45 - 60
 
     meta_file_header(
     ) :
@@ -52,7 +56,8 @@ struct meta_file_header
         align(0),
         checksz(0),
         metasz(0),
-        globsz(0)
+        globsz(0),
+        uuid(boost::uuids::nil_uuid())
     {
         magic[0] = 0;
         magic[1] = 0;
@@ -79,8 +84,11 @@ struct meta_file_header
         align(align),
         checksz(checksz),
         metasz(metasz),
-        globsz(globsz)
+        globsz(globsz),
+        uuid(boost::uuids::random_generator()())
     {
+        // TODO static assert boost uuid size 16 bytes
+
         magic[0] = S1B_MAGIC0;
         magic[1] = S1B_MAGIC1;
         magic[2] = S1B_MAGIC2;
@@ -97,11 +105,15 @@ struct meta_file_header
     {
         // TODO assert each field
 
+        // TODO assert without copy because of uuid
+        meta_file_header _this = *this;
+        _this.uuid = other.uuid;
+
         const char* const p_other = reinterpret_cast
             <const char*>(&other);
 
         const char* const p_this_begin = reinterpret_cast
-            <const char*>(this);
+            <const char*>(&_this);
 
         const char* const p_this_end = p_this_begin +
             sizeof(meta_file_header);
@@ -117,7 +129,6 @@ struct meta_file_header
                 << actual_value_ei(*comp.second)
                 << offset_ei(std::distance(p_this_begin, comp.first)));
         }
-
     }
 };
 #pragma pack(pop)
