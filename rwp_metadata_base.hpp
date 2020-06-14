@@ -65,6 +65,9 @@ protected:
 protected:
 
     void assert_header(
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const
+#endif
         Buffer& buffer
     ) const
     {
@@ -72,8 +75,14 @@ protected:
 
         const foffset_t header_offset = base_type::get_header_offset();
 
+#if defined(S1B_DISABLE_ATOMIC_RW)
         buffer.seek(header_offset);
-        buffer.read_object(header, true);
+#endif
+        buffer.read_object(header,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            header_offset,
+#endif
+            true);
 
         meta_file_header new_header(Align, base_type::get_meta_check_size(),
             file_metadata_size, global_struct_size);
@@ -91,13 +100,24 @@ protected:
     }
 
     void assert_meta_check(
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const
+#endif
         Buffer& buffer
     ) const
     {
         meta_file_header header;
 
-        buffer.seek(base_type::get_header_offset());
-        buffer.read_object(header, true);
+        const foffset_t header_offset = base_type::get_header_offset();
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        buffer.seek(header_offset);
+#endif
+        buffer.read_object(header,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            header_offset,
+#endif
+            true);
 
         const foffset_t check_sz = header.checksz;
 
@@ -115,8 +135,14 @@ protected:
 
         const foffset_t check_offset = base_type::get_meta_check_offset();
 
+#if defined(S1B_DISABLE_ATOMIC_RW)
         buffer.seek(check_offset);
-        buffer.read(&check[0], check.size(), true, true);
+#endif
+        buffer.read(&check[0],
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            check_offset,
+#endif
+            check.size(), true, true);
 
         const char* const p_check = &check[0];
 
@@ -151,8 +177,16 @@ protected:
         meta_file_header new_header(Align, base_type::get_meta_check_size(),
             file_metadata_size, global_struct_size);
 
-        buffer.seek(base_type::get_header_offset());
-        buffer.write_object(new_header);
+        const foffset_t header_offset = base_type::get_header_offset();
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        buffer.seek(header_offset);
+#endif
+        buffer.write_object(new_header
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            , header_offset
+#endif
+            );
     }
 
     void create_meta_check(
@@ -164,17 +198,38 @@ protected:
 
         foffset_t check_sz = base_type::get_meta_check_size();
 
-        buffer.seek(base_type::get_meta_check_offset());
-        buffer.write(p_src_check, check_sz);
+        const foffset_t check_offset = base_type::get_meta_check_offset();
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        buffer.seek(check_offset);
+#endif
+        buffer.write(p_src_check,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            check_offset,
+#endif
+            check_sz);
     }
 
     global_struct_type read_global_struct(
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const
+#endif
         Buffer& buffer
     ) const
     {
         global_struct_type glob;
-        buffer.seek(base_type::get_global_struct_offset());
-        buffer.read_object(glob, true);
+
+        const foffset_t glob_offset = base_type::get_global_struct_offset();
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        buffer.seek(glob_offset);
+#endif
+        buffer.read_object(glob,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            glob_offset,
+#endif
+            true);
+
         return glob;
     }
 
@@ -183,11 +238,22 @@ protected:
         const global_struct_type& glob
     ) const
     {
-        buffer.seek(base_type::get_global_struct_offset());
-        buffer.write_object(glob);
+        const foffset_t glob_offset = base_type::get_global_struct_offset();
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        buffer.seek(glob_offset);
+#endif
+        buffer.write_object(glob
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            , glob_offset
+#endif
+            );
     }
 
     bool read_file_element(
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const
+#endif
         Buffer& buffer,
         s1b::uid_t uid,
         file_metadata_type& elem,
@@ -201,11 +267,20 @@ protected:
                 << file_name_ei(buffer.filename()));
         }
 
-        buffer.seek(base_type::get_element_offset_unsafe(uid));
+        const foffset_t element_offset = base_type::
+            get_element_offset_unsafe(uid);
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        buffer.seek(element_offset);
+#endif
 
         try
         {
-            if (buffer.read_object(elem, required) == 0)
+            if (buffer.read_object(elem,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                element_offset,
+#endif
+                required) == 0)
                 return false;
         }
         catch (const io_exception& e)

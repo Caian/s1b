@@ -28,6 +28,8 @@
 
 #include <vector>
 
+#include <omp.h>
+
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
@@ -320,6 +322,15 @@ S1B_TEST(ReadNothing)
         meta.uid = s1b::FirstUID;
         ASSERT_THROW(metadata.read_data_offset(meta),
             s1b::invalid_uid_exception);
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const test_rwp_metadata& cmetadata = metadata;
+        ASSERT_FALSE(cmetadata.read(s1b::FirstUID, meta));
+        ASSERT_FALSE(cmetadata.read(s1b::FirstUID, meta, offset));
+        ASSERT_FALSE(cmetadata.read_data_offset(s1b::FirstUID, offset));
+        meta.uid = s1b::FirstUID;
+        ASSERT_THROW(cmetadata.read_data_offset(meta),
+            s1b::invalid_uid_exception);
+#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -552,6 +563,17 @@ S1B_TEST(ReadOnReadOnlyFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(metadata.read(uid_3, meta));
         ASSERT_FALSE(metadata.read(uid_3, meta, offset));
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const test_rwp_metadata& cmetadata = metadata;
+        ASSERT_TRUE(cmetadata.read(uid_0, meta, offset));
+        ASSERT_TRUE(meta_ref_1 == meta);
+        ASSERT_TRUE(cmetadata.read(uid_1, meta, offset));
+        ASSERT_TRUE(meta_ref_2 == meta);
+        ASSERT_TRUE(cmetadata.read(uid_2, meta));
+        ASSERT_TRUE(meta_ref_3 == meta);
+        ASSERT_FALSE(cmetadata.read(uid_3, meta));
+        ASSERT_FALSE(cmetadata.read(uid_3, meta, offset));
+#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -600,6 +622,17 @@ S1B_TEST(ReadOnWriteableFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(metadata.read(uid_3, meta));
         ASSERT_FALSE(metadata.read(uid_3, meta, offset));
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const test_rwp_metadata& cmetadata = metadata;
+        ASSERT_TRUE(cmetadata.read(uid_0, meta, offset));
+        ASSERT_TRUE(meta_ref_1 == meta);
+        ASSERT_TRUE(cmetadata.read(uid_1, meta, offset));
+        ASSERT_TRUE(meta_ref_2 == meta);
+        ASSERT_TRUE(cmetadata.read(uid_2, meta));
+        ASSERT_TRUE(meta_ref_3 == meta);
+        ASSERT_FALSE(cmetadata.read(uid_3, meta));
+        ASSERT_FALSE(cmetadata.read(uid_3, meta, offset));
+#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -646,6 +679,17 @@ S1B_TEST(ReadOnNewFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(metadata.read(uid_3, meta));
         ASSERT_FALSE(metadata.read(uid_3, meta, offset));
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const test_rwp_metadata& cmetadata = metadata;
+        ASSERT_TRUE(cmetadata.read(uid_0, meta, offset));
+        ASSERT_TRUE(meta_ref_1 == meta);
+        ASSERT_TRUE(cmetadata.read(uid_1, meta, offset));
+        ASSERT_TRUE(meta_ref_2 == meta);
+        ASSERT_TRUE(cmetadata.read(uid_2, meta));
+        ASSERT_TRUE(meta_ref_3 == meta);
+        ASSERT_FALSE(cmetadata.read(uid_3, meta));
+        ASSERT_FALSE(cmetadata.read(uid_3, meta, offset));
+#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -771,6 +815,13 @@ S1B_TEST(WriteOnWriteableFile)
         ASSERT_THROW(metadata.write(meta_ref_3),
             s1b::element_mismatch_exception);
         ASSERT_NO_THROW(metadata.sync());
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const test_rwp_metadata& cmetadata = metadata;
+        ASSERT_TRUE(cmetadata.read(uid_0, meta_ref_1));
+        ASSERT_TRUE(cmetadata.read(uid_1, meta_ref_2));
+        ASSERT_TRUE(cmetadata.read(uid_2, meta_ref_3));
+        ASSERT_FALSE(cmetadata.read(uid_3, meta_ref_4));
+#endif
     }
     catch (const std::exception& e)
     {
@@ -835,6 +886,13 @@ S1B_TEST(WriteOnNewFile)
         ASSERT_THROW(metadata.write(meta_ref_3),
             s1b::element_mismatch_exception);
         ASSERT_NO_THROW(metadata.sync());
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const test_rwp_metadata& cmetadata = metadata;
+        ASSERT_TRUE(cmetadata.read(uid_0, meta_ref_1));
+        ASSERT_TRUE(cmetadata.read(uid_1, meta_ref_2));
+        ASSERT_TRUE(cmetadata.read(uid_2, meta_ref_3));
+        ASSERT_FALSE(cmetadata.read(uid_3, meta_ref_4));
+#endif
     }
     catch (const std::exception& e)
     {
@@ -1311,5 +1369,94 @@ S1B_TEST(PushCompatCreateNewAndOpenWrite)
 
     _PushCompatCreateNew(s1b_file_name, true);
 }
+
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+S1B_TEST(ParallelIOTest)
+
+    const int N = 10000;
+
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= N; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    try
+    {
+        test_rwp_metadata metadata(s1b_file_name,
+            meta_vector.begin(), meta_vector.end());
+        ASSERT_TRUE(metadata.can_write());
+
+        int num_threads = 0;
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 1; i <= N; i++)
+        {
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            for (size_t j = 0; j < 100; j++)
+            {
+                test_metadata meta;
+                metadata.read(i, meta);
+                meta.x++;
+                meta.y++;
+                meta.value1++;
+                meta.value2++;
+                metadata.write(meta);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+        ASSERT_NO_THROW(metadata.sync());
+
+        std::vector<test_metadata> result(N);
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 0; i < N; i++)
+        {
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            for (size_t j = 0; j < 200; j++)
+            {
+                metadata.read(i+1, result[i]);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+
+        for (size_t i = 0; i < N; i++)
+        {
+            for (size_t j = 0; j < 100; j++)
+            {
+                meta_vector[i].x++;
+                meta_vector[i].y++;
+                meta_vector[i].value1++;
+                meta_vector[i].value2++;
+            }
+
+            ASSERT_EQ(meta_vector[i].x     , result[i].x     );
+            ASSERT_EQ(meta_vector[i].y     , result[i].y     );
+            ASSERT_EQ(meta_vector[i].value1, result[i].value1);
+            ASSERT_EQ(meta_vector[i].value2, result[i].value2);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+#endif
 
 }

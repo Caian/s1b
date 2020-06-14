@@ -84,6 +84,27 @@ struct functions
         return static_cast<size_t>(result);
     }
 
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+    static size_t read(
+        fd_type fd,
+        void* buf,
+        offset_type offset,
+        size_t count
+    )
+    {
+        ssize_t result = ::pread64(fd, buf, count, offset);
+
+        if (result == -1)
+        {
+            EX3_THROW(io_exception()
+                << operation_name_ei("pread64")
+                << operation_errno_ei(errno));
+        }
+
+        return static_cast<size_t>(result);
+    }
+#endif
+
     static void write(
         fd_type fd,
         const void* buf,
@@ -108,6 +129,34 @@ struct functions
                 << actual_size_ei(uresult));
         }
     }
+
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+    static void write(
+        fd_type fd,
+        const void* buf,
+        offset_type offset,
+        size_t count
+    )
+    {
+        ssize_t result = ::pwrite64(fd, buf, count, offset);
+
+        if (result < 0)
+        {
+            EX3_THROW(io_exception()
+                << operation_name_ei("pwrite64")
+                << operation_errno_ei(errno));
+        }
+
+        size_t uresult = static_cast<size_t>(result);
+
+        if (uresult != count)
+        {
+            EX3_THROW(incomplete_write_exception()
+                << expected_size_ei(count)
+                << actual_size_ei(uresult));
+        }
+    }
+#endif
 
     static void fsync(
         fd_type fd

@@ -64,15 +64,20 @@ void _Open(
         Metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+        const
+#endif
+        Metadata& rmetadata = metadata;
+
         if (throws_exception)
         {
-            ASSERT_THROW(test_managed_index_2 index(filename, metadata,
+            ASSERT_THROW(test_managed_index_2 index(filename, rmetadata,
                 initial_size, num_retries, size_increment), Exception);
         }
         else
         {
             ASSERT_NO_THROW(test_managed_index_2 index(filename,
-                metadata, initial_size, num_retries, size_increment));
+                rmetadata, initial_size, num_retries, size_increment));
         }
     }
     catch (const std::exception& e)

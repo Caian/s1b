@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <s1b/macros.hpp>
 #include <s1b/exceptions.hpp>
 #include <s1b/traits/metadata_type.hpp>
 
@@ -37,9 +38,9 @@ struct get_rwp_metadata
 
     typedef value_type reference;
 
-    typedef Metadata& MetadataRef;
+    typedef S1B_READ_METHOD_QUALIFIER Metadata& MetadataRef;
 
-    typedef Metadata*  MetadataPtr;
+    typedef S1B_READ_METHOD_QUALIFIER Metadata* MetadataPtr;
 
     MetadataPtr _metadata;
 

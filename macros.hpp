@@ -50,6 +50,12 @@
 #define S1B_DATA_ALIGNMENT_BYTES S1B_DEFAULT_ALIGNMENT_BYTES
 #endif
 
+#if defined(S1B_DISABLE_ATOMIC_RW)
+#define S1B_READ_METHOD_QUALIFIER
+#else
+#define S1B_READ_METHOD_QUALIFIER const
+#endif
+
 #if !defined(S1B_DISABLE_OS_MACROS)
 #include "os/macros.hpp"
 #endif

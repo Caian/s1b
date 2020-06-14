@@ -23,6 +23,8 @@
 
 #include <s1b/rwp_buffer.hpp>
 
+#include <omp.h>
+
 namespace {
 
 // TODO unlink
@@ -132,18 +134,47 @@ S1B_TEST(ReadNothing)
 
     try
     {
+        s1b::foffset_t position = 0;
         s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
         ASSERT_FALSE(buffer.can_write());
-        ASSERT_EQ(0, buffer.read(data, 0, false, false));
-        ASSERT_EQ(0, buffer.read(data, 128, false, false));
-        ASSERT_EQ(0, buffer.read(data, 128, true, false));
-        ASSERT_THROW(buffer.read(data, 0, false, true),
+        ASSERT_EQ(0, position += buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            0, false, false));
+        ASSERT_EQ(0, position += buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            128, false, false));
+        ASSERT_EQ(0, position += buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            128, true, false));
+        ASSERT_THROW(position += buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            0, false, true),
             s1b::incomplete_read_exception);
-        ASSERT_THROW(buffer.read(data, 128, false, true),
+        ASSERT_THROW(position += buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            128, false, true),
             s1b::incomplete_read_exception);
-        ASSERT_THROW(buffer.read(data, 0, true, true),
+        ASSERT_THROW(position += buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            0, true, true),
             s1b::incomplete_read_exception);
-        ASSERT_THROW(buffer.read(data, 128, true, true),
+        ASSERT_THROW(position += buffer.read(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            128, true, true),
             s1b::incomplete_read_exception);
         ASSERT_NO_THROW(buffer.sync());
     }
@@ -165,13 +196,34 @@ S1B_TEST(WriteOnReadOnlyFile)
 
     try
     {
+        s1b::foffset_t position = 0;
         s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
         ASSERT_FALSE(buffer.can_write());
-        ASSERT_THROW(buffer.write(data, 0), s1b::read_only_exception);
-        ASSERT_THROW(buffer.write(data, 128), s1b::read_only_exception);
-        ASSERT_THROW(buffer.write(data, 11), s1b::read_only_exception);
-        ASSERT_THROW(buffer.write(data, 21), s1b::read_only_exception);
-        ASSERT_THROW(buffer.write_object(data2), s1b::read_only_exception);
+        ASSERT_THROW(position += buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            0), s1b::read_only_exception);
+        ASSERT_THROW(position += buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            128), s1b::read_only_exception);
+        ASSERT_THROW(position += buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            11), s1b::read_only_exception);
+        ASSERT_THROW(position += buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            21), s1b::read_only_exception);
+        ASSERT_THROW(position += buffer.write_object(data2
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            , position
+#endif
+            ), s1b::read_only_exception);
         ASSERT_NO_THROW(buffer.sync());
     }
     catch (const std::exception& e)
@@ -190,12 +242,32 @@ void _WriteOn(const char* filename, s1b::open_mode mode)
 
     try
     {
+        s1b::foffset_t position = 0;
         s1b::rwp_buffer buffer(filename, mode);
         ASSERT_TRUE(buffer.can_write());
-        ASSERT_EQ(0, buffer.write(data, 0));
-        ASSERT_EQ(123, buffer.write(data, 123));
-        ASSERT_EQ(11, buffer.write(data, 11));
-        ASSERT_EQ(sizeof(data2), buffer.write_object(data2));
+        ASSERT_EQ(0, position += buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            0));
+        ASSERT_EQ(123, buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            123));
+        position += 123;
+        ASSERT_EQ(11, buffer.write(data,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            11));
+        position += 11;
+        ASSERT_EQ(sizeof(data2), buffer.write_object(data2
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            , position
+#endif
+            ));
+        position += sizeof(data2);
         ASSERT_EQ(123 + 11 + sizeof(data2), buffer.get_size());
         ASSERT_NO_THROW(buffer.sync());
     }
@@ -231,13 +303,36 @@ S1B_TEST(MixedRWOperations)
         static const short value_3 = -20;
 
         {
+            s1b::foffset_t position = 0;
             s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW);
             ASSERT_TRUE(buffer.can_write());
-            ASSERT_EQ(size_1, buffer.write(value_1, size_1));
+            ASSERT_EQ(size_1, buffer.write(value_1,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                size_1));
+#if defined(S1B_DISABLE_ATOMIC_RW)
             ASSERT_EQ(2, buffer.seek(2));
-            ASSERT_EQ(size_1, buffer.write(value_1, size_1));
-            ASSERT_EQ(sizeof(value_2), buffer.write_object(value_2));
-            ASSERT_EQ(sizeof(value_3), buffer.write_object(value_3));
+#endif
+            position = 2;
+            ASSERT_EQ(size_1, buffer.write(value_1,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                size_1));
+            position += size_1;
+            ASSERT_EQ(sizeof(value_2), buffer.write_object(value_2
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                , position
+#endif
+                ));
+            position += sizeof(value_2);
+            ASSERT_EQ(sizeof(value_3), buffer.write_object(value_3
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                , position
+#endif
+                ));
+            position += sizeof(value_3);
             ASSERT_EQ(2 + size_1 + sizeof(value_2) + sizeof(value_3),
                 buffer.get_size());
             ASSERT_NO_THROW(buffer.sync());
@@ -248,20 +343,42 @@ S1B_TEST(MixedRWOperations)
             float data_2;
             short data_3;
 
+            s1b::foffset_t position = 0;
             s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_WRITE);
             ASSERT_TRUE(buffer.can_write());
-            ASSERT_EQ(2 + size_1, buffer.read(data_1, 2 + size_1, true, true));
+            ASSERT_EQ(2 + size_1, buffer.read(data_1,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                2 + size_1, true, true));
+            position += 2 + size_1;
             data_1[2 + size_1] = 0;
             ASSERT_STREQ("TeTest123", data_1);
-            ASSERT_EQ(sizeof(data_2), buffer.read_object(data_2, true));
+            ASSERT_EQ(sizeof(data_2), buffer.read_object(data_2,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                true));
+            position += sizeof(data_2);
             ASSERT_EQ(value_2, data_2);
-            ASSERT_EQ(sizeof(data_3), buffer.read_object(data_3, true));
+            ASSERT_EQ(sizeof(data_3), buffer.read_object(data_3,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                true));
+            position += sizeof(data_3);
             ASSERT_EQ(value_3, data_3);
             ASSERT_EQ(2 + size_1 + sizeof(value_2) + sizeof(value_3),
                 buffer.get_size());
-            ASSERT_EQ(2 + size_1 + sizeof(value_2) + sizeof(value_3),
-                buffer.seek(2 + size_1 + sizeof(value_2) + sizeof(value_3)));
-            ASSERT_EQ(sizeof(value_2), buffer.write_object(value_2));
+            position = 2 + size_1 + sizeof(value_2) + sizeof(value_3);
+#if defined(S1B_DISABLE_ATOMIC_RW)
+            ASSERT_EQ(position, buffer.seek(position));
+#endif
+            ASSERT_EQ(sizeof(value_2), buffer.write_object(value_2
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                , position
+#endif
+                ));
             ASSERT_NO_THROW(buffer.sync());
         }
 
@@ -270,16 +387,36 @@ S1B_TEST(MixedRWOperations)
             float data_2;
             short data_3;
 
+            s1b::foffset_t position = 0;
             s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
             ASSERT_FALSE(buffer.can_write());
-            ASSERT_EQ(2 + size_1, buffer.read(data_1, 2 + size_1, true, true));
+            ASSERT_EQ(2 + size_1, buffer.read(data_1,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                2 + size_1, true, true));
+            position += 2 + size_1;
             data_1[2 + size_1] = 0;
             ASSERT_STREQ("TeTest123", data_1);
-            ASSERT_EQ(sizeof(data_2), buffer.read_object(data_2, true));
+            ASSERT_EQ(sizeof(data_2), buffer.read_object(data_2,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                true));
+            position += sizeof(data_2);
             ASSERT_EQ(value_2, data_2);
-            ASSERT_EQ(sizeof(data_3), buffer.read_object(data_3, true));
+            ASSERT_EQ(sizeof(data_3), buffer.read_object(data_3,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                true));
+            position += sizeof(data_3);
             ASSERT_EQ(value_3, data_3);
-            ASSERT_EQ(sizeof(data_2), buffer.read_object(data_2, true));
+            ASSERT_EQ(sizeof(data_2), buffer.read_object(data_2,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                position,
+#endif
+                true));
             ASSERT_EQ(value_2, data_2);
             ASSERT_EQ(2 + size_1 + 2 * sizeof(value_2) + sizeof(value_3),
                 buffer.get_size());
@@ -294,5 +431,79 @@ S1B_TEST(MixedRWOperations)
         FAIL();
     }
 }
+
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+S1B_TEST(ParallelIOTest)
+
+    const int N = 10000;
+
+    try
+    {
+        s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW);
+        ASSERT_TRUE(buffer.can_write());
+
+        int num_threads = 0;
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 0; i < N; i++)
+        {
+            const s1b::foffset_t position = i;
+
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            {
+                const char value = 0;
+                buffer.write(&value, position, 1);
+            }
+
+            for (size_t j = 0; j < 100; j++)
+            {
+                char value;
+                buffer.read(&value, position, 1, true, true);
+                value++;
+                buffer.write(&value, position, 1);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+        ASSERT_NO_THROW(buffer.sync());
+
+        std::vector<char> result(N);
+
+        #pragma omp parallel for schedule(static) num_threads(100)
+        for (size_t i = 0; i < N; i++)
+        {
+            const s1b::foffset_t position = i;
+
+            #pragma omp critical
+            {
+                num_threads = omp_get_num_threads();
+            }
+
+            for (size_t j = 0; j < 200; j++)
+            {
+                buffer.read(&result[i], position, 1, true, true);
+            }
+        }
+
+        ASSERT_EQ(100, num_threads);
+
+        for (size_t i = 0; i < N; i++)
+        {
+            ASSERT_EQ(100, result[i]);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+#endif
 
 }
