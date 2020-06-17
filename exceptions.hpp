@@ -111,6 +111,7 @@ S1B_MAKE_DERIVED(index_size_too_big   , format    )
 S1B_MAKE_DERIVED(file_name_too_long   , format    )
 S1B_MAKE_DERIVED(data_offset_overlap  , format    )
 S1B_MAKE_DERIVED(misaligned           , format    )
+S1B_MAKE_DERIVED(invalid_data_layout  , format    )
 S1B_MAKE_DERIVED(extra_elem_bytes     , misaligned)
 S1B_MAKE_DERIVED(extra_slot_bytes     , misaligned)
 
