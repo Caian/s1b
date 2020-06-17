@@ -60,6 +60,15 @@ private:
     ) const
     {
         const size_t data_size = _buffer.size();
+
+        if (data_size == 0 && _slot_size == 0)
+        {
+            EX3_THROW(invalid_data_layout_exception()
+                << file_size_ei(data_size)
+                << actual_slot_size_ei(_slot_size)
+                << file_name_ei(filename()));
+        }
+
         const unsigned int num_slots = data_size / _slot_size;
         const foffset_t extra_bytes = data_size % _slot_size;
 
