@@ -506,6 +506,54 @@ S1B_TEST(OpenWriteExistingNonEmpty10SlotsMapped)
     _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 10);
 }
 
+void _EmptyMetadataRWP(
+    const char* filename,
+    s1b::open_mode mode,
+    unsigned int slots
+)
+{
+    std::vector<test_metadata> meta_vector;
+    std::string meta_filename(filename);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_rwp_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        ASSERT_NO_THROW(s1b::rwp_data data(filename));
+        ASSERT_THROW(s1b::rwp_data data(filename, mode, metadata, slots),
+            s1b::invalid_data_layout_exception);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(OpenExistingReadFromEmptyMetadata0SlotRWP)
+
+    _EmptyMetadataRWP(s1b_file_name, s1b::S1B_OPEN_DEFAULT, 0);
+}
+
+S1B_TEST(OpenExistingReadFromEmptyMetadata1SlotRWP)
+
+    _EmptyMetadataRWP(s1b_file_name, s1b::S1B_OPEN_DEFAULT, 1);
+}
+
+S1B_TEST(OpenExistingReadFromEmptyMetadata3SlotsRWP)
+
+    _EmptyMetadataRWP(s1b_file_name, s1b::S1B_OPEN_DEFAULT, 3);
+}
+
+S1B_TEST(OpenExistingReadFromEmptyMetadata10SlotsRWP)
+
+    _EmptyMetadataRWP(s1b_file_name, s1b::S1B_OPEN_DEFAULT, 10);
+}
+
 S1B_TEST(Filename)
 
     std::vector<test_metadata> meta_vector;
