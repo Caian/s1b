@@ -122,6 +122,58 @@ S1B_TEST(GetSize)
     }
 }
 
+S1B_TEST(GetDataSize)
+
+    std::vector<test_metadata> meta_vector;
+
+    int size = 0;
+
+    for (int i = 1; i <= 10; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+        size += meta.size;
+    }
+
+    try
+    {
+        test_mapped_metadata metadata(s1b_file_name, meta_vector.begin(),
+            meta_vector.end(), s1b::S1B_HUGETLB_OFF);
+
+        // Probably will be greater due to alignment
+        ASSERT_LE(size, metadata.get_data_size());
+
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
+S1B_TEST(GetDataSizeEmpty)
+
+    std::vector<test_metadata> meta_vector;
+
+    try
+    {
+        test_mapped_metadata metadata(s1b_file_name, meta_vector.begin(),
+            meta_vector.end(), s1b::S1B_HUGETLB_OFF);
+
+        ASSERT_EQ(0, metadata.get_data_size());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+}
+
 S1B_TEST(GetMetaAdapter)
 
     std::vector<test_metadata> meta_vector;
