@@ -418,10 +418,13 @@ public:
 
         // WARNING: Data offsets must not be reordered for this to work!
 
-        foffset_t last_data_offset;
-        const metadata_type& last = get_element(get_last_uid(),
-            last_data_offset);
+        const s1b::uid_t last_uid = get_last_uid();
 
+        if (last_uid == FirstUID-1)
+            return 0;
+
+        foffset_t last_data_offset;
+        const metadata_type& last = get_element(last_uid, last_data_offset);
         const size_t size = base_type::meta_adapter().get_data_size(last);
         return last_data_offset + base_type::compute_aligned_data_size(size);
     }
