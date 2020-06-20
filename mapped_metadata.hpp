@@ -33,6 +33,8 @@
 #include "traits/metadata_type.hpp"
 #include "traits/global_struct_type.hpp"
 
+#include <boost/uuid/uuid.hpp>
+
 #include <algorithm>
 #include <iterator>
 
@@ -61,9 +63,10 @@ protected:
 private:
 
     mapped_buffer _buffer;
+    const boost::uuids::uuid* const _uuid;
     s1b::uid_t _num_elements;
 
-    void assert_header(
+    const boost::uuids::uuid* assert_header(
     ) const
     {
         const foffset_t header_offset = base_type::get_header_offset();
@@ -88,6 +91,8 @@ private:
                 << file_position_ei(header_offset)
                 << file_name_ei(filename()));
         }
+
+        return &p_header->uuid;
     }
 
     void assert_meta_check(
@@ -136,7 +141,7 @@ private:
         }
     }
 
-    void create_header(
+    const boost::uuids::uuid* create_header(
     )
     {
         meta_file_header* const p_header = _buffer.ptr<meta_file_header>(
@@ -149,6 +154,8 @@ private:
             base_type::global_struct_size);
 
         *p_header = new_header;
+
+        return &p_header->uuid;
     }
 
     void create_global_struct(
@@ -257,9 +264,9 @@ public:
             S1B_OPEN_NEW,
             base_type::compute_file_size(metadata_begin, metadata_end),
             htlb_mode),
+        _uuid(create_header()),
         _num_elements(compute_num_elements(_buffer.size()))
     {
-        create_header();
         create_global_struct();
         create_meta_check();
         copy_elements(metadata_begin, metadata_end);
@@ -276,9 +283,9 @@ public:
             can_write ? S1B_OPEN_WRITE : S1B_OPEN_DEFAULT,
             0,
             htlb_mode),
+        _uuid(assert_header()),
         _num_elements(compute_num_elements(_buffer.size()))
     {
-        assert_header();
         assert_meta_check();
     }
 
@@ -310,6 +317,12 @@ public:
     ) const
     {
         return base_type::meta_adapter();
+    }
+
+    const boost::uuids::uuid& file_uuid(
+    ) const
+    {
+        return *_uuid;
     }
 
     const global_struct_type& global_struct(

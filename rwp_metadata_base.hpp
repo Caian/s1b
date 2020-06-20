@@ -30,6 +30,8 @@
 #include "traits/metadata_type.hpp"
 #include "traits/global_struct_type.hpp"
 
+#include <boost/uuid/uuid.hpp>
+
 #include <iterator>
 
 namespace s1b { // TODO move to detail
@@ -64,7 +66,7 @@ protected:
 
 protected:
 
-    void assert_header(
+    boost::uuids::uuid assert_header(
 #if !defined(S1B_DISABLE_ATOMIC_RW)
         const
 #endif
@@ -97,6 +99,8 @@ protected:
                 << file_position_ei(header_offset)
                 << file_name_ei(buffer.filename()));
         }
+
+        return header.uuid;
     }
 
     void assert_meta_check(
@@ -169,7 +173,7 @@ protected:
         }
     }
 
-    void create_header(
+    boost::uuids::uuid create_header(
         Buffer& buffer
     ) const
     {
@@ -187,6 +191,8 @@ protected:
             , header_offset
 #endif
             );
+
+        return new_header.uuid;
     }
 
     void create_meta_check(

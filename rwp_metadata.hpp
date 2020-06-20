@@ -34,6 +34,8 @@
 #include "traits/metadata_type.hpp"
 #include "traits/global_struct_type.hpp"
 
+#include <boost/uuid/uuid.hpp>
+
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -60,12 +62,13 @@ protected:
 private:
 
     rwp_buffer _buffer;
+    const boost::uuids::uuid _uuid;
     global_struct_type _global_struct;
 
-    void assert_header(
+    boost::uuids::uuid assert_header(
     ) S1B_READ_METHOD_QUALIFIER
     {
-        base_type::assert_header(_buffer);
+        return base_type::assert_header(_buffer);
     }
 
     void assert_meta_check(
@@ -74,10 +77,10 @@ private:
         base_type::assert_meta_check(_buffer);
     }
 
-    void create_header(
+    boost::uuids::uuid create_header(
     )
     {
-        base_type::create_header(_buffer);
+        return base_type::create_header(_buffer);
 
     }
 
@@ -278,9 +281,9 @@ public:
         _buffer(
             filename,
             S1B_OPEN_NEW),
+        _uuid(create_header()),
         _global_struct()
     {
-        create_header();
         write_global_struct(_global_struct);
         create_meta_check();
         align_file(FirstUID-1);
@@ -296,9 +299,9 @@ public:
         _buffer(
             filename,
             S1B_OPEN_NEW),
+        _uuid(create_header()),
         _global_struct()
     {
-        create_header();
         write_global_struct(_global_struct);
         create_meta_check();
         copy_elements(metadata_begin, metadata_end);
@@ -312,9 +315,9 @@ public:
         _buffer(
             filename,
             can_write ? S1B_OPEN_WRITE : S1B_OPEN_DEFAULT),
+        _uuid(assert_header()),
         _global_struct(read_global_struct())
     {
-        assert_header();
         assert_meta_check();
         // TODO assert valid size
     }
@@ -341,6 +344,12 @@ public:
     ) const
     {
         return base_type::meta_adapter();
+    }
+
+    const boost::uuids::uuid& file_uuid(
+    ) const
+    {
+        return _uuid;
     }
 
     const global_struct_type& global_struct(

@@ -20,7 +20,7 @@
 #pragma once
 
 #define S1B_VERSION_MAJOR    0
-#define S1B_VERSION_MINOR    4
+#define S1B_VERSION_MINOR    5
 #define S1B_VERSION_REVISION 0
 
 #define S1B_MAGIC0 0x43

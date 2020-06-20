@@ -23,12 +23,15 @@
 #include "macros.hpp"
 #include "open_mode.hpp"
 #include "mem_align.hpp"
+#include "data_base.hpp"
 #include "exceptions.hpp"
 #include "push_buffer.hpp"
 
+#include <boost/uuid/uuid.hpp>
+
 namespace s1b {
 
-class push_data
+class push_data : public data_base
 {
 private:
 
@@ -37,12 +40,15 @@ private:
 private:
 
     push_buffer _buffer;
+    boost::uuids::uuid _meta_uuid;
     foffset_t _slot_size;
 
     foffset_t assert_slot_size(
-        foffset_t slot_size
+        foffset_t data_size
     ) const
     {
+        const foffset_t slot_size = data_size - data_base::get_data_offset();
+
         if (!mem_align::is_aligned<Align>(slot_size))
         {
             EX3_THROW(misaligned_exception()
@@ -55,16 +61,62 @@ private:
         return slot_size;
     }
 
+    const boost::uuids::uuid& write_uuid(
+        const boost::uuids::uuid& uuid
+    )
+    {
+        const foffset_t position = data_base::get_uuid_offset();
+
+        // TODO assert seek returns
+        _buffer.seek(position);
+
+        const foffset_t size = _buffer.write_object(uuid);
+        const foffset_t total_size = position + size;
+        const foffset_t total_aligned = data_base::get_data_offset();
+
+        _buffer.skip(total_aligned - total_size);
+
+        return uuid;
+    }
+
+    const boost::uuids::uuid& assert_uuid(
+        const boost::uuids::uuid& meta_uuid
+    )
+    {
+        boost::uuids::uuid stored_uuid;
+
+        const foffset_t position = data_base::get_uuid_offset();
+
+        // TODO assert seek returns
+        _buffer.seek(position);
+        _buffer.read_object(stored_uuid, true);
+
+        if (meta_uuid != stored_uuid)
+        {
+            EX3_THROW(uuid_mismatch_exception()
+                << metadata_uuid_ei(meta_uuid)
+                << stored_uuid_ei(stored_uuid)
+                << file_name_ei(filename()));
+        }
+
+        return meta_uuid;
+    }
+
 public:
 
+    template <typename Metadata>
     push_data(
         const path_string& filename,
-        bool create_new
+        bool create_new,
+        const Metadata& metadata
     ) :
         _buffer(filename, create_new),
-        _slot_size(assert_slot_size(_buffer.get_size()))
+        _meta_uuid(create_new ?
+            write_uuid(metadata.file_uuid()) :
+            assert_uuid(metadata.file_uuid())),
+        _slot_size(assert_slot_size(_buffer.get_size())) // TODO fail if size mismatch
     {
-        _buffer.seek(_slot_size);
+        _buffer.seek(_slot_size + data_base::get_data_offset());
     }
 
     const path_string& filename(
@@ -89,6 +141,12 @@ public:
     ) const
     {
         return _slot_size;
+    }
+
+    const boost::uuids::uuid& metadata_uuid(
+    ) const
+    {
+        return _meta_uuid;
     }
 
     size_t get_size(

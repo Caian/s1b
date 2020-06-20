@@ -604,10 +604,74 @@ S1B_TEST(MixedPushOperations)
     }
 }
 
+S1B_TEST(UuidIsUniqueAndValid)
+
+    boost::uuids::uuid uuid1, uuid2, uuid3;
+    test_global_data glob;
+    std::vector<test_metadata> meta_vector;
+
+    for (int i = 1; i <= 10; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    try
+    {
+        test_push_metadata metadata(s1b_file_name, glob);
+        ASSERT_NO_THROW(uuid1 = metadata.file_uuid());
+        ASSERT_FALSE(uuid1.is_nil());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        test_push_metadata metadata(s1b_file_name, glob);
+        ASSERT_NO_THROW(uuid2 = metadata.file_uuid());
+        ASSERT_FALSE(uuid2.is_nil());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    ASSERT_NE(uuid1, uuid2);
+
+    try
+    {
+        test_push_metadata metadata(s1b_file_name,
+            meta_vector.begin(), meta_vector.end(),
+            glob);
+        ASSERT_NO_THROW(uuid3 = metadata.file_uuid());
+        ASSERT_FALSE(uuid3.is_nil());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    ASSERT_NE(uuid1, uuid3);
+    ASSERT_NE(uuid2, uuid3);
+}
+
 S1B_TEST(MappedCompatCreateNew)
 
     std::vector<test_metadata> meta_vector;
     std::vector<s1b::foffset_t> off_vector;
+    boost::uuids::uuid uuid;
 
     for (int i = 1; i <= 1000; i++)
     {
@@ -620,6 +684,8 @@ S1B_TEST(MappedCompatCreateNew)
     {
         test_mapped_metadata metadata(s1b_file_name, meta_vector.begin(),
             meta_vector.end(), s1b::S1B_HUGETLB_OFF);
+        ASSERT_NO_THROW(uuid = metadata.file_uuid());
+        ASSERT_EQ(uuid, metadata.file_uuid());
         for (int i = 1; i <= 1000; i++)
         {
             ASSERT_NO_THROW(off_vector.push_back(
@@ -640,6 +706,7 @@ S1B_TEST(MappedCompatCreateNew)
         test_metadata meta;
         test_push_metadata metadata(s1b_file_name);
         ASSERT_EQ(true, metadata.can_write());
+        ASSERT_EQ(uuid, metadata.file_uuid());
         for (unsigned int i = 1001; i <= 1500; i++)
         {
             initialize_metadata::small_i(meta, i);
@@ -660,6 +727,7 @@ S1B_TEST(RWPCompatCreateNew)
 
     std::vector<test_metadata> meta_vector;
     std::vector<s1b::foffset_t> off_vector;
+    boost::uuids::uuid uuid;
 
     for (int i = 1; i <= 1000; i++)
     {
@@ -672,6 +740,7 @@ S1B_TEST(RWPCompatCreateNew)
     {
         test_rwp_metadata metadata(s1b_file_name,
             meta_vector.begin(), meta_vector.end());
+        ASSERT_NO_THROW(uuid = metadata.file_uuid());
         for (int i = 1001; i <= 1010; i++)
         {
             test_metadata meta;
@@ -700,6 +769,7 @@ S1B_TEST(RWPCompatCreateNew)
         test_metadata meta;
         test_push_metadata metadata(s1b_file_name);
         ASSERT_EQ(true, metadata.can_write());
+        ASSERT_EQ(uuid, metadata.file_uuid());
         for (unsigned int i = 1011; i <= 1500; i++)
         {
             initialize_metadata::small_i(meta, i);

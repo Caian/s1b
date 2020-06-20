@@ -34,6 +34,8 @@
 
 #include "helpers/seekrw_proxy.hpp"
 
+#include <boost/uuid/uuid.hpp>
+
 #include <algorithm>
 #include <iterator>
 #include <vector>
@@ -80,14 +82,15 @@ protected:
 private:
 
     push_buffer _buffer;
+    const boost::uuids::uuid _uuid;
     global_struct_type _global_struct;
     s1b::uid_t _next_uid;
     foffset_t _next_data_offset;
 
-    void assert_header(
+    boost::uuids::uuid assert_header(
     )
     {
-        base_type::assert_header(_buffer);
+        return base_type::assert_header(_buffer);
     }
 
     void assert_meta_check(
@@ -96,7 +99,7 @@ private:
         base_type::assert_meta_check(_buffer);
     }
 
-    void create_header(
+    boost::uuids::uuid create_header(
     )
     {
 #if defined(S1B_DISABLE_ATOMIC_RW)
@@ -104,8 +107,7 @@ private:
 #else
         meta_buffer_type proxy = _buffer;
 #endif
-        base_type::create_header(proxy);
-
+        return base_type::create_header(proxy);
     }
 
     void create_meta_check(
@@ -117,7 +119,6 @@ private:
         meta_buffer_type proxy = _buffer;
 #endif
         base_type::create_meta_check(proxy);
-
     }
 
     global_struct_type read_global_struct(
@@ -297,11 +298,11 @@ public:
     ) :
         rwp_metadata_base<MetaAdapter, meta_buffer_type>(),
         _buffer(filename, true),
+        _uuid(create_header()),
         _global_struct(global_struct),
         _next_uid(FirstUID),
         _next_data_offset(0)
     {
-        create_header();
         write_global_struct(_global_struct);
         create_meta_check();
         align_file();
@@ -316,11 +317,11 @@ public:
     ) :
         rwp_metadata_base<MetaAdapter, meta_buffer_type>(),
         _buffer(filename, true),
+        _uuid(create_header()),
         _global_struct(global_struct),
         _next_uid(FirstUID),
         _next_data_offset(0)
     {
-        create_header();
         write_global_struct(_global_struct);
         create_meta_check();
         copy_elements(metadata_begin, metadata_end);
@@ -332,11 +333,11 @@ public:
     ) :
         rwp_metadata_base<MetaAdapter, meta_buffer_type>(),
         _buffer(filename, false),
+        _uuid(assert_header()),
         _global_struct(read_global_struct()),
         _next_uid(_get_last_uid() + 1),
         _next_data_offset(_get_data_size())
     {
-        assert_header();
         assert_meta_check();
         // TODO assert valid size
         align_file();
@@ -364,6 +365,12 @@ public:
     ) const
     {
         return base_type::meta_adapter();
+    }
+
+    const boost::uuids::uuid& file_uuid(
+    ) const
+    {
+        return _uuid;
     }
 
     const global_struct_type& global_struct(

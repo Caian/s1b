@@ -23,22 +23,27 @@
 #include "macros.hpp"
 #include "open_mode.hpp"
 #include "mem_align.hpp"
+#include "data_base.hpp"
 #include "rwp_buffer.hpp"
 #include "exceptions.hpp"
 
+#include <boost/uuid/uuid.hpp>
+#include <boost/uuid/uuid_generators.hpp>
+
 namespace s1b {
 
-class rwp_data
+class rwp_data : public data_base
 {
 private:
 
-    static const foffset_t Align = S1B_DATA_ALIGNMENT_BYTES;
+    static const foffset_t Align = data_base::Align;
 
 private:
 
     foffset_t _slot_size;
     rwp_buffer _buffer;
     unsigned int _num_slots;
+    boost::uuids::uuid _meta_uuid;
 
     foffset_t assert_slot_size(
         const path_string& filename,
@@ -72,7 +77,8 @@ private:
 
         if (data_size > 0)
         {
-            const foffset_t aligned_position = data_size - 1;
+            const foffset_t aligned_position = data_size - 1 +
+                data_base::get_data_offset();
 
 #if defined(S1B_DISABLE_ATOMIC_RW)
             _buffer.seek(aligned_position);
@@ -91,7 +97,8 @@ private:
         unsigned int expected
     ) const
     {
-        const foffset_t data_size = _buffer.get_size();
+        const size_t file_size = _buffer.get_size();
+        const size_t data_size = file_size - data_base::get_data_offset();
 
         if (data_size == 0 && _slot_size == 0)
         {
@@ -107,7 +114,7 @@ private:
         if (!mem_align::is_aligned<Align>(data_size))
         {
             EX3_THROW(misaligned_exception()
-                << file_size_ei(data_size)
+                << file_size_ei(file_size)
                 << expected_alignment_ei(
                     static_cast<foffset_t>(Align))
                 << file_name_ei(filename()));
@@ -116,7 +123,7 @@ private:
         if (extra_bytes != 0)
         {
             EX3_THROW(extra_slot_bytes_exception()
-                << file_size_ei(data_size)
+                << file_size_ei(file_size)
                 << actual_slot_size_ei(_slot_size)
                 << actual_num_slots_ei(num_slots)
                 << file_name_ei(filename()));
@@ -127,26 +134,79 @@ private:
             EX3_THROW(num_slots_mismatch_exception()
                 << expected_num_slots_ei(expected)
                 << actual_num_slots_ei(num_slots)
-                << file_size_ei(data_size)
+                << file_size_ei(file_size)
                 << file_name_ei(filename()));
         }
 
         return num_slots;
     }
 
-public:
-
-    rwp_data(
-        const path_string& filename
-    ) :
-        _slot_size(
-            assert_slot_size(filename, 0)),
-        _buffer(
-            filename,
-            S1B_OPEN_NEW),
-        _num_slots(1)
+    const boost::uuids::uuid& write_uuid(
+        const boost::uuids::uuid& uuid
+    )
     {
+        const foffset_t position = data_base::get_uuid_offset();
+
+        // TODO assert seek returns
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        _buffer.seek(position);
+#endif
+        const foffset_t size = _buffer.write_object(uuid
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            , position
+#endif
+            );
+
+        const foffset_t total_size = position + size;
+        const foffset_t total_aligned = data_base::get_data_offset();
+
+        if (total_aligned > total_size)
+        {
+            const foffset_t aligned_position = total_aligned - 1;
+
+#if defined(S1B_DISABLE_ATOMIC_RW)
+            _buffer.seek(aligned_position);
+#endif
+            _buffer.write("",
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+                aligned_position,
+#endif
+                1);
+        }
+
+        return uuid;
     }
+
+    const boost::uuids::uuid& assert_uuid(
+        const boost::uuids::uuid& meta_uuid
+    )
+    {
+        boost::uuids::uuid stored_uuid;
+
+        const foffset_t position = data_base::get_uuid_offset();
+
+        // TODO assert seek returns
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        _buffer.seek(position);
+#endif
+        _buffer.read_object(stored_uuid,
+#if !defined(S1B_DISABLE_ATOMIC_RW)
+            position,
+#endif
+            true);
+
+        if (meta_uuid != stored_uuid)
+        {
+            EX3_THROW(uuid_mismatch_exception()
+                << metadata_uuid_ei(meta_uuid)
+                << stored_uuid_ei(stored_uuid)
+                << file_name_ei(filename()));
+        }
+
+        return meta_uuid;
+    }
+
+public:
 
     template <typename Metadata>
     rwp_data(
@@ -160,7 +220,10 @@ public:
         _buffer(filename, mode),
         _num_slots(((mode & S1B_OPEN_TRUNC) != 0) ?
             initialize_num_slots(num_slots) :
-            compute_num_slots(num_slots))
+            compute_num_slots(num_slots)),
+        _meta_uuid(((mode & S1B_OPEN_TRUNC) != 0) ?
+            write_uuid(metadata.file_uuid()) :
+            assert_uuid(metadata.file_uuid()))
     {
     }
 
@@ -176,7 +239,10 @@ public:
         _buffer(filename, mode),
         _num_slots(((mode & S1B_OPEN_TRUNC) != 0) ?
             initialize_num_slots(num_slots) :
-            compute_num_slots(num_slots))
+            compute_num_slots(num_slots)),
+        _meta_uuid(((mode & S1B_OPEN_TRUNC) != 0) ?
+            write_uuid(metadata.file_uuid()) :
+            assert_uuid(metadata.file_uuid()))
     {
     }
 
@@ -204,6 +270,12 @@ public:
         return _slot_size;
     }
 
+    const boost::uuids::uuid& metadata_uuid(
+    ) const
+    {
+        return _meta_uuid;
+    }
+
     size_t get_size(
     ) const
     {
@@ -217,6 +289,9 @@ public:
         unsigned int slot=0
     ) S1B_READ_METHOD_QUALIFIER
     {
+        // TODO position < 0 invalid
+        position += data_base::get_data_offset();
+
         if (!mem_align::is_aligned<Align>(position))
         {
             EX3_THROW(misaligned_exception()
@@ -254,6 +329,8 @@ public:
         unsigned int slot=0
     )
     {
+        position += data_base::get_data_offset();
+
         if (!mem_align::is_aligned<Align>(position))
         {
             EX3_THROW(misaligned_exception()
@@ -337,7 +414,7 @@ public:
 
         _slot_size = total_aligned;
 
-        return position;
+        return position - data_base::get_data_offset();
     }
 
     void sync(

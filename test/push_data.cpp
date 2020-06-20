@@ -44,32 +44,100 @@ typedef s1b::mapped_metadata<test_adapter> test_mapped_metadata;
 
 S1B_TEST(OpenPushNonExisting)
 
-    ASSERT_THROW(s1b::push_data data(s1b_file_name, false),
-        s1b::io_exception);
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_rwp_metadata metadata(meta_filename);
+
+        ASSERT_THROW(s1b::push_data data(s1b_file_name, false, metadata),
+            s1b::io_exception);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
 }
 
 S1B_TEST(OpenNewNonExisting)
 
-    ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, true));
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_rwp_metadata metadata(meta_filename);
+
+        ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, true, metadata));
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
 }
 
 S1B_TEST(OpenPushExistingEmpty)
 
-    ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, true));
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
 
-    ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, false));
+    try
+    {
+        test_rwp_metadata metadata(meta_filename);
+
+        ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, true, metadata));
+
+        ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, false, metadata));
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
 }
 
 S1B_TEST(OpenAligned) // TODO add to others
 
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
     try
     {
-        char test_data[128];
+        test_rwp_metadata metadata(meta_filename);
 
-        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_NEW);
+        s1b::push_data data(s1b_file_name, true, metadata);
+        data.align();
+        data.sync();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    try
+    {
+        char test_data[128]; // TODO use S1B_DATA_ALIGNMENT_BYTES?
+
+        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_WRITE);
+        const s1b::foffset_t off = data.get_size();
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        ASSERT_NO_THROW(data.seek(off));
+#endif
         ASSERT_NO_THROW(data.write(test_data,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
-            0,
+            off,
 #endif
             sizeof(test_data)));
     }
@@ -81,19 +149,54 @@ S1B_TEST(OpenAligned) // TODO add to others
         FAIL();
     }
 
-    ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, false));
+    try
+    {
+        test_rwp_metadata metadata(meta_filename, false);
+
+        ASSERT_NO_THROW(s1b::push_data data(s1b_file_name, false, metadata));
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
 }
 
 S1B_TEST(OpenMisligned) // TODO add to others
+
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    try
+    {
+        test_rwp_metadata metadata(meta_filename);
+
+        s1b::push_data data(s1b_file_name, true, metadata);
+        data.align();
+        data.sync();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
 
     try
     {
         char test_data[129];
 
-        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_NEW);
+        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_WRITE);
+        const s1b::foffset_t off = data.get_size();
+#if defined(S1B_DISABLE_ATOMIC_RW)
+        ASSERT_NO_THROW(data.seek(off));
+#endif
         ASSERT_NO_THROW(data.write(test_data,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
-            0,
+            off,
 #endif
             sizeof(test_data)));
     }
@@ -105,15 +208,32 @@ S1B_TEST(OpenMisligned) // TODO add to others
         FAIL();
     }
 
-    ASSERT_THROW(s1b::push_data data(s1b_file_name, false),
-        s1b::misaligned_exception);
+    try
+    {
+        test_rwp_metadata metadata(meta_filename, false);
+
+        ASSERT_THROW(s1b::push_data data(s1b_file_name, false, metadata),
+            s1b::misaligned_exception);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
 }
 
 S1B_TEST(Filename)
 
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
     try
     {
-        s1b::push_data data(s1b_file_name, true);
+        test_rwp_metadata metadata(meta_filename);
+
+        s1b::push_data data(s1b_file_name, true, metadata);
 
         ASSERT_STREQ(s1b_file_name, data.filename().c_str());
     }
@@ -128,17 +248,40 @@ S1B_TEST(Filename)
 
 S1B_TEST(SizeAndSlotSize)
 
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
+    s1b::foffset_t initial_size;
+
+    try
+    {
+        test_rwp_metadata metadata(meta_filename);
+
+        s1b::push_data data(s1b_file_name, true, metadata);
+        data.align();
+        data.sync();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
     try
     {
         char test_data[512];
 
-        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_NEW);
+        s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_WRITE);
+        ASSERT_NO_THROW(initial_size = data.get_size());
+        const s1b::foffset_t off = data.get_size();
 #if defined(S1B_DISABLE_ATOMIC_RW)
-        ASSERT_NO_THROW(data.seek(0));
+        ASSERT_NO_THROW(data.seek(off));
 #endif
         ASSERT_NO_THROW(data.write(test_data, // TODO
 #if !defined(S1B_DISABLE_ATOMIC_RW)
-            0,
+            off,
 #endif
             sizeof(test_data)));
     }
@@ -152,10 +295,12 @@ S1B_TEST(SizeAndSlotSize)
 
     try
     {
-        s1b::push_data data(s1b_file_name, false);
+        test_rwp_metadata metadata(meta_filename, false);
+
+        s1b::push_data data(s1b_file_name, false, metadata);
 
         ASSERT_EQ(512, data.slot_size());
-        ASSERT_EQ(512, data.get_size());
+        ASSERT_EQ(512 + initial_size, data.get_size());
     }
     catch (const std::exception& e)
     {
@@ -168,15 +313,23 @@ S1B_TEST(SizeAndSlotSize)
 
 S1B_TEST(OpenEmptyAndPush)
 
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
     std::vector<char> test_data;
     s1b::foffset_t prev_off = -1;
     s1b::foffset_t off;
+    s1b::foffset_t initial_size;
 
     try
     {
-        s1b::push_data data(s1b_file_name, true);
+        test_rwp_metadata metadata(meta_filename);
+
+        s1b::push_data data(s1b_file_name, true, metadata);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
+        ASSERT_EQ(0, data.slot_size());
+        ASSERT_NO_THROW(initial_size = data.get_size());
 
         for (int i = 17; i < 4359; i += 33 + 2*i, prev_off = off)
         {
@@ -189,9 +342,9 @@ S1B_TEST(OpenEmptyAndPush)
         }
 
         ASSERT_NO_THROW(data.align());
-        ASSERT_EQ(data.get_size(), data.slot_size());
+        ASSERT_EQ(data.get_size(), initial_size + data.slot_size());
         ASSERT_NO_THROW(data.align());
-        ASSERT_EQ(data.get_size(), data.slot_size());
+        ASSERT_EQ(data.get_size(), initial_size + data.slot_size());
     }
     catch (const std::exception& e)
     {
@@ -204,15 +357,23 @@ S1B_TEST(OpenEmptyAndPush)
 
 S1B_TEST(AlignAndReOpen)
 
+    std::string meta_filename(s1b_file_name);
+    meta_filename += "_metadata";
+
     std::vector<char> test_data;
     s1b::foffset_t prev_off = -1;
     s1b::foffset_t off;
+    s1b::foffset_t initial_size = 0;
 
     try
     {
-        s1b::push_data data(s1b_file_name, true);
+        test_rwp_metadata metadata(meta_filename);
+
+        s1b::push_data data(s1b_file_name, true, metadata);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
+        ASSERT_EQ(0, data.slot_size());
+        ASSERT_NO_THROW(initial_size = data.get_size());
 
         for (int i = 17; i < 4359; i += 33 + 2*i, prev_off = off)
         {
@@ -225,9 +386,9 @@ S1B_TEST(AlignAndReOpen)
         }
 
         ASSERT_NO_THROW(data.align());
-        ASSERT_EQ(data.get_size(), data.slot_size());
+        ASSERT_EQ(data.get_size(), data.slot_size() + initial_size);
         ASSERT_NO_THROW(data.align());
-        ASSERT_EQ(data.get_size(), data.slot_size());
+        ASSERT_EQ(data.get_size(), data.slot_size() + initial_size);
     }
     catch (const std::exception& e)
     {
@@ -239,10 +400,12 @@ S1B_TEST(AlignAndReOpen)
 
     try
     {
-        s1b::push_data data(s1b_file_name, false);
+        test_rwp_metadata metadata(meta_filename, false);
+
+        s1b::push_data data(s1b_file_name, false, metadata);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
-        ASSERT_EQ(data.get_size(), data.slot_size());
+        ASSERT_EQ(data.get_size(), data.slot_size() + initial_size);
     }
     catch (const std::exception& e)
     {
@@ -312,7 +475,9 @@ S1B_TEST(MappedCompatCreateNewAndPush)
 
     try
     {
-        s1b::push_data data(s1b_file_name, false);
+        test_mapped_metadata metadata(meta_filename, false);
+
+        s1b::push_data data(s1b_file_name, false, metadata);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
@@ -391,7 +556,9 @@ S1B_TEST(RwpCompatCreateNewAndPush)
 
     try
     {
-        s1b::push_data data(s1b_file_name, false);
+        test_mapped_metadata metadata(meta_filename, false);
+
+        s1b::push_data data(s1b_file_name, false, metadata);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
