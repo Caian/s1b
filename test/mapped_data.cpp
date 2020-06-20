@@ -47,17 +47,51 @@ typedef s1b::mapped_metadata<test_adapter> test_mapped_metadata;
 struct NoException { };
 
 template <typename Metadata, typename Exception>
-void _Open(
+void __Open(
     const char* filename,
     s1b::open_mode mode,
-    unsigned int slots
+    unsigned int slots,
+    Metadata& metadata
 )
 {
     static const bool throws_exception = boost::is_same<
         Exception,
         NoException>::value == false;
 
+    if (throws_exception)
+    {
+        ASSERT_THROW(s1b::mapped_data data(filename, mode, metadata,
+            slots, s1b::S1B_HUGETLB_OFF), Exception);
+    }
+    else
+    {
+        ASSERT_NO_THROW(s1b::mapped_data data(filename,
+            mode, metadata, slots, s1b::S1B_HUGETLB_OFF));
+    }
+}
+
+template <typename Metadata, typename Exception>
+void _Open(
+    const char* filename,
+    s1b::open_mode mode,
+    unsigned int slots,
+    unsigned int existing_slots,
+    bool existing_empty
+)
+{
     std::vector<test_metadata> meta_vector;
+
+    std::string meta_filename(filename);
+    meta_filename += "_metadata";
+
+    if ((existing_slots != 0) && existing_empty)
+    {
+        Metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        ASSERT_NO_THROW(s1b::rwp_data data(filename, s1b::S1B_OPEN_NEW,
+            metadata, existing_slots));
+    }
 
     for (int i = 1; i <= 1000; i++)
     {
@@ -66,31 +100,27 @@ void _Open(
         meta_vector.push_back(meta);
     }
 
-    std::string meta_filename(filename);
-    meta_filename += "_metadata";
-
-    try
+    if ((existing_slots != 0) && !existing_empty)
     {
         Metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        if (throws_exception)
-        {
-            ASSERT_THROW(s1b::mapped_data data(filename, mode, metadata,
-                slots, s1b::S1B_HUGETLB_OFF), Exception);
-        }
-        else
-        {
-            ASSERT_NO_THROW(s1b::mapped_data data(filename,
-                mode, metadata, slots, s1b::S1B_HUGETLB_OFF));
-        }
+        ASSERT_NO_THROW(s1b::rwp_data data(filename, s1b::S1B_OPEN_NEW,
+            metadata, existing_slots));
     }
-    catch (const std::exception& e)
+
+    if (existing_slots == 0)
     {
-        std::cerr
-            << boost::current_exception_diagnostic_information()
-            << std::endl;
-        FAIL();
+        Metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
+        __Open<Metadata, Exception>(filename, mode, slots, metadata);
+    }
+    else
+    {
+        Metadata metadata(meta_filename, s1b::S1B_OPEN_DEFAULT);
+
+        __Open<Metadata, Exception>(filename, mode, slots, metadata);
     }
 }
 
@@ -102,7 +132,7 @@ void _OpenRWNonExisting(
 )
 {
     _Open<Metadata, s1b::io_exception>(filename, can_write ?
-        s1b::S1B_OPEN_WRITE : s1b::S1B_OPEN_DEFAULT, slots);
+        s1b::S1B_OPEN_WRITE : s1b::S1B_OPEN_DEFAULT, slots, 0, true);
 }
 
 template <typename Metadata>
@@ -115,11 +145,12 @@ void _OpenNewNonExisting(
 
     if (slots == 0)
     {
-        _Open<Metadata, s1b::empty_mmap_exception>(filename, mode, slots);
+        _Open<Metadata, s1b::invalid_num_slots_exception>(filename, mode,
+            slots, 0, true);
     }
     else
     {
-        _Open<Metadata, NoException>(filename, mode, slots);
+        _Open<Metadata, NoException>(filename, mode, slots, 0, true);
     }
 }
 
@@ -133,18 +164,21 @@ void _OpenExistingEmpty(
     s1b::open_mode mode = can_write ? s1b::S1B_OPEN_WRITE :
         s1b::S1B_OPEN_DEFAULT;
 
-    _Open<Metadata, s1b::empty_mmap_exception>(filename, mode, slots);
+    _Open<Metadata, s1b::invalid_data_layout_exception>(filename, mode,
+        slots, 1, true);
 }
 
 template <typename Metadata>
 void _OpenExistingFull(
     const char* filename,
     bool can_write,
-    unsigned int slots
+    unsigned int slots,
+    unsigned int existing_slots
 )
 {
     _Open<Metadata, NoException>(filename, can_write ?
-        s1b::S1B_OPEN_WRITE : s1b::S1B_OPEN_DEFAULT, slots);
+        s1b::S1B_OPEN_WRITE : s1b::S1B_OPEN_DEFAULT, slots,
+        existing_slots, false);
 }
 
 S1B_TEST(OpenReadNonExisting0SlotRWP)
@@ -269,226 +303,162 @@ S1B_TEST(OpenNewNonExisting10SlotsMapped)
 
 S1B_TEST(OpenReadExistingEmpty0SlotRWP)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, false, 0);
 }
 
 S1B_TEST(OpenReadExistingEmpty1SlotRWP)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, false, 1);
 }
 
 S1B_TEST(OpenReadExistingEmpty3SlotsRWP)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, false, 3);
 }
 
 S1B_TEST(OpenReadExistingEmpty10SlotsRWP)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, false, 10);
 }
 
 S1B_TEST(OpenWriteExistingEmpty0SlotRWP)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, true, 0);
 }
 
 S1B_TEST(OpenWriteExistingEmpty1SlotRWP)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, true, 1);
 }
 
 S1B_TEST(OpenWriteExistingEmpty3SlotsRWP)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, true, 3);
 }
 
 S1B_TEST(OpenWriteExistingEmpty10SlotsRWP)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_rwp_metadata>(s1b_file_name, true, 10);
 }
 
 S1B_TEST(OpenReadExistingEmpty0SlotMapped)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, false, 1);
 }
 
 S1B_TEST(OpenReadExistingEmpty1SlotMapped)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, false, 1);
 }
 
 S1B_TEST(OpenReadExistingEmpty3SlotsMapped)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, false, 3);
 }
 
 S1B_TEST(OpenReadExistingEmpty10SlotsMapped)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, false, 10);
 }
 
 S1B_TEST(OpenWriteExistingEmpty0SlotMapped)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, true, 0);
 }
 
 S1B_TEST(OpenWriteExistingEmpty1SlotMapped)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, true, 1);
 }
 
 S1B_TEST(OpenWriteExistingEmpty3SlotsMapped)
 
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
-
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, true, 3);
 }
 
 S1B_TEST(OpenWriteExistingEmpty10SlotsMapped)
-
-    ASSERT_NO_THROW(s1b::rwp_data data(s1b_file_name));
 
     _OpenExistingEmpty<test_mapped_metadata>(s1b_file_name, true, 10);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty0SlotRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 0);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 0, 1);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty1SlotRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 1);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 1, 1);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty3SlotsRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 3);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 3);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 3, 3);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty10SlotsRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 10);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 10);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, false, 10, 10);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty0SlotRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 0);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 0, 1);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty1SlotRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 1);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 1, 1);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty3SlotsRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 3);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 3);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 3, 3);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty10SlotsRWP)
 
-    _OpenNewNonExisting<test_rwp_metadata>(s1b_file_name, 10);
-
-    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 10);
+    _OpenExistingFull<test_rwp_metadata>(s1b_file_name, true, 10, 10);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty0SlotMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 0);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 0, 1);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty1SlotMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 1);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 1, 1);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty3SlotsMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 3);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 3);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 3, 3);
 }
 
 S1B_TEST(OpenReadExistingNonEmpty10SlotsMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 10);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 10);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, false, 10, 10);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty0SlotMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 0);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 0, 1);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty1SlotMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 1);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 1);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 1, 1);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty3SlotsMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 3);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 3);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 3, 3);
 }
 
 S1B_TEST(OpenWriteExistingNonEmpty10SlotsMapped)
 
-    _OpenNewNonExisting<test_mapped_metadata>(s1b_file_name, 10);
-
-    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 10);
+    _OpenExistingFull<test_mapped_metadata>(s1b_file_name, true, 10, 10);
 }
 
 S1B_TEST(Filename)
@@ -527,13 +497,7 @@ S1B_TEST(Filename)
 S1B_TEST(SizeAndSlotSize)
 
     std::vector<test_metadata> meta_vector;
-
-    for (int i = 1; i <= 1000; i++)
-    {
-        test_metadata meta;
-        initialize_metadata::small_i(meta, i);
-        meta_vector.push_back(meta);
-    }
+    s1b::foffset_t initial_size = 0;
 
     std::string meta_filename(s1b_file_name);
     meta_filename += "_metadata";
@@ -543,10 +507,34 @@ S1B_TEST(SizeAndSlotSize)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
+        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+
+        ASSERT_NO_THROW(initial_size = data.get_size());
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr
+            << boost::current_exception_diagnostic_information()
+            << std::endl;
+        FAIL();
+    }
+
+    for (int i = 1; i <= 1000; i++)
+    {
+        test_metadata meta;
+        initialize_metadata::small_i(meta, i);
+        meta_vector.push_back(meta);
+    }
+
+    try
+    {
+        test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
+            meta_vector.end());
+
         s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_NEW,
             metadata, 3, s1b::S1B_HUGETLB_OFF);
 
-        ASSERT_EQ(3 * data.slot_size(), data.size());
+        ASSERT_EQ(3 * data.slot_size() + initial_size, data.size());
     }
     catch (const std::exception& e)
     {
@@ -933,7 +921,7 @@ void _PushCompatCreateNew(const char* filename, bool can_write)
         test_push_metadata metadata(meta_filename, glob);
         ASSERT_TRUE(metadata.can_write());
 
-        s1b::push_data data(filename, true);
+        s1b::push_data data(filename, true, metadata);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
@@ -1045,7 +1033,7 @@ S1B_TEST(PushCompatCreateNewAndPush)
         test_global_data glob;
         test_push_metadata metadata(meta_filename, glob);
 
-        s1b::push_data data(s1b_file_name, true);
+        s1b::push_data data(s1b_file_name, true, metadata);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
