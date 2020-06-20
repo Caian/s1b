@@ -40,6 +40,7 @@ private:
     unsigned int _num_slots;
 
     size_t assert_slot_size(
+        const path_string& filename,
         size_t slot_size
     ) const
     {
@@ -49,7 +50,7 @@ private:
                 << actual_slot_size_ei(slot_size)
                 << expected_alignment_ei(
                     static_cast<foffset_t>(Align))
-                << file_name_ei(filename()));
+                << file_name_ei(filename));
         }
 
         return slot_size;
@@ -155,7 +156,7 @@ public:
         unsigned int num_slots,
         hugetlb_mode htlb_mode=S1B_HUGETLB_OFF
     ) :
-        _slot_size(assert_slot_size(metadata.get_data_size())),
+        _slot_size(assert_slot_size(filename, metadata.get_data_size())),
         _buffer(filename, mode, _slot_size*num_slots, htlb_mode),
         _num_slots(compute_num_slots(num_slots))
     {
@@ -169,7 +170,7 @@ public:
         unsigned int num_slots,
         hugetlb_mode htlb_mode=S1B_HUGETLB_OFF
     ) :
-        _slot_size(assert_slot_size(metadata.get_data_size())),
+        _slot_size(assert_slot_size(filename, metadata.get_data_size())),
         _buffer(filename, mode, _slot_size*num_slots, htlb_mode),
         _num_slots(compute_num_slots(num_slots))
     {
