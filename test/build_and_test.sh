@@ -50,10 +50,11 @@ fail_build_dir() {
         test_name=${test_name%.*}
         test_out="$SESS_DIR/${test_name}.o"
         echo "$test_cpp -> $test_out"
-        TFAIL=$($CXX $test_cpp $CXXFLAGS $flags -fopenmp -c -o "${test_out}" \
-            2>&1 | grep "$how" | wc -l)
+        $CXX $test_cpp $CXXFLAGS $flags -fopenmp -c -o "${test_out}" &>build.log
+        TFAIL=$(cat build.log | grep "$how" | wc -l)
         if [ "$NFAIL" != "$TFAIL" ] ; then
             echo "$NFAIL != $TFAIL!"
+            cat build.log
             exit 1
         fi
     done
