@@ -26,6 +26,9 @@
 
 #include <algorithm>
 
+#define TEST_OBJ_TYPE s1b::mapped_buffer
+#include "move_test.hpp"
+
 namespace {
 
 // TODO unlink
@@ -188,8 +191,9 @@ S1B_TEST(Filename)
 
     try
     {
-        s1b::mapped_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW, 17,
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_NEW, 17,
             s1b::S1B_HUGETLB_OFF);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_STREQ(s1b_file_name, buffer.filename().c_str());
     }
     catch (const std::exception& e)
@@ -235,8 +239,9 @@ S1B_TEST(WriteOnWriteableFile)
 
     try
     {
-        s1b::mapped_buffer buffer(s1b_file_name, s1b::S1B_OPEN_WRITE,
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_WRITE,
             0, s1b::S1B_HUGETLB_OFF);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_EQ(total_size, buffer.size());
         ASSERT_NE(static_cast<void*>(0), buffer.address());
         ASSERT_TRUE(buffer.can_write());
@@ -264,8 +269,9 @@ S1B_TEST(WriteOnNewFile)
 
     try
     {
-        s1b::mapped_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW,
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_NEW,
             total_size, s1b::S1B_HUGETLB_OFF);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_EQ(total_size, buffer.size());
         ASSERT_NE(static_cast<void*>(0), buffer.address());
         ASSERT_TRUE(buffer.can_write());
@@ -296,8 +302,9 @@ S1B_TEST(MixedRWOperations)
             sizeof(value_3);
 
         {
-            s1b::mapped_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW,
+            MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_NEW,
                 total_size, s1b::S1B_HUGETLB_OFF);
+            MOVE_TEST_OBJ(buffer);
             ASSERT_NE(static_cast<void*>(0), buffer.address());
             ASSERT_EQ(total_size, buffer.size());
             ASSERT_TRUE(buffer.can_write());
@@ -313,8 +320,9 @@ S1B_TEST(MixedRWOperations)
             float data_2;
             short data_3;
 
-            s1b::mapped_buffer buffer(s1b_file_name, s1b::S1B_OPEN_WRITE,
+            MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_WRITE,
                 0, s1b::S1B_HUGETLB_OFF);
+            MOVE_TEST_OBJ(buffer);
             ASSERT_NE(static_cast<void*>(0), buffer.address());
             ASSERT_EQ(total_size, buffer.size());
             ASSERT_TRUE(buffer.can_write());
@@ -334,8 +342,9 @@ S1B_TEST(MixedRWOperations)
             float data_2;
             short data_3;
 
-            s1b::mapped_buffer buffer(s1b_file_name, s1b::S1B_OPEN_DEFAULT,
+            MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_DEFAULT,
                 0, s1b::S1B_HUGETLB_OFF);
+            MOVE_TEST_OBJ(buffer);
             ASSERT_NE(static_cast<void*>(0), buffer.address());
             ASSERT_EQ(total_size, buffer.size());
             ASSERT_FALSE(buffer.can_write());

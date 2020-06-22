@@ -35,6 +35,7 @@
 #include "traits/global_struct_type.hpp"
 
 #include <boost/uuid/uuid.hpp>
+#include <boost/move/utility_core.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -47,6 +48,10 @@ namespace s1b {
 template <typename MetaAdapter>
 class rwp_metadata : public rwp_metadata_base<MetaAdapter, rwp_buffer>
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(rwp_metadata)
+
 public:
 
     typedef rwp_metadata_base<MetaAdapter, rwp_buffer> base_type;
@@ -320,6 +325,26 @@ public:
     {
         assert_meta_check();
         // TODO assert valid size
+    }
+
+    rwp_metadata(
+        BOOST_RV_REF(rwp_metadata) other
+    ) :
+        _buffer(boost::move(other._buffer)),
+        _uuid(boost::move(other._uuid)),
+        _global_struct(boost::move(other._global_struct))
+    {
+    }
+
+    rwp_metadata& operator=(
+        BOOST_RV_REF(rwp_metadata) other
+    )
+    {
+        _buffer = boost::move(other._buffer);
+        _uuid = boost::move(other._uuid);
+        _global_struct = boost::move(other._global_struct);
+
+        return *this;
     }
 
     const path_string& filename(

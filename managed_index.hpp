@@ -35,6 +35,7 @@
 
 #include <boost/interprocess/offset_ptr.hpp>
 #include <boost/uuid/uuid.hpp>
+#include <boost/move/utility_core.hpp>
 
 #include <algorithm>
 #include <string>
@@ -44,6 +45,10 @@ namespace s1b {
 template <typename Index>
 class managed_index
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(managed_index)
+
 private:
 
     struct MANAGED_DATA
@@ -256,6 +261,24 @@ public:
             _buffer.data()))
     {
         assert_index_id();
+    }
+
+    managed_index(
+        BOOST_RV_REF(managed_index) other
+    ) :
+        _buffer(boost::move(other._buffer)),
+        _p_data(other._p_data)
+    {
+    }
+
+    managed_index& operator=(
+        BOOST_RV_REF(managed_index) other
+    )
+    {
+        _buffer = boost::move(other._buffer);
+        _p_data = other._p_data;
+
+        return *this;
     }
 
     const path_string& filename(

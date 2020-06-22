@@ -26,6 +26,9 @@
 #include <s1b/rwp_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
 
+#define TEST_OBJ_TYPE test_managed_index_2
+#include "move_test.hpp"
+
 namespace {
 
 // TODO unlink
@@ -197,8 +200,9 @@ S1B_TEST(Filename)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_managed_index_2 index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_STREQ(s1b_file_name, index.filename().c_str());
     }
@@ -233,8 +237,9 @@ S1B_TEST(Size)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_managed_index_2 index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(initial_size + size_increment, index.size());
         ASSERT_GE(initial_size + size_increment, index.get_used_bytes());
@@ -270,8 +275,9 @@ S1B_TEST(IndexId)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_managed_index_2 index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_STREQ("s1b::managed_index/simple", index.get_index_id());
     }
@@ -306,8 +312,9 @@ S1B_TEST(AlwaysReadOnly)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_managed_index_2 index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(false, index.can_write());
     }

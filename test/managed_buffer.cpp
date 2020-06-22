@@ -22,6 +22,9 @@
 #include "s1b_test.hpp"
 #include "managed_test.hpp"
 
+#define TEST_OBJ_TYPE s1b::managed_buffer
+#include "move_test.hpp"
+
 namespace {
 
 // TODO unlink
@@ -97,8 +100,9 @@ S1B_TEST(Filename)
 
     try
     {
-        s1b::managed_buffer buffer(s1b_file_name, initial_size,
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, initial_size,
             initializer, 1, size_increment);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_STREQ(s1b_file_name, buffer.filename().c_str());
     }
     catch (const std::exception& e)
@@ -119,8 +123,9 @@ S1B_TEST(Size)
 
     try
     {
-        s1b::managed_buffer buffer(s1b_file_name, initial_size,
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, initial_size,
             initializer, 1, size_increment);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_EQ(initial_size + size_increment, buffer.size());
         ASSERT_GE(initial_size + size_increment, buffer.get_used_bytes());
     }
@@ -142,8 +147,9 @@ S1B_TEST(AlwaysReadOnly)
 
     try
     {
-        s1b::managed_buffer buffer(s1b_file_name, initial_size,
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, initial_size,
             initializer, 1, size_increment);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_EQ(false, buffer.can_write());
     }
     catch (const std::exception& e)
@@ -165,8 +171,9 @@ S1B_TEST(Data)
     try
     {
         const char* cp_data = 0;
-        s1b::managed_buffer buffer(s1b_file_name, initial_size,
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, initial_size,
             initializer, 1, size_increment);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_EQ(false, buffer.can_write());
         ASSERT_NO_THROW(cp_data = buffer.data());
         ASSERT_NE(static_cast<char*>(0), cp_data);

@@ -25,6 +25,7 @@
 
 #include <boost/interprocess/managed_mapped_file.hpp>
 #include <boost/interprocess/offset_ptr.hpp>
+#include <boost/move/utility_core.hpp>
 
 #include <utility>
 
@@ -32,6 +33,10 @@ namespace s1b {
 
 class managed_buffer
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(managed_buffer)
+
 private:
 
     static const char* get_data_name(
@@ -213,6 +218,26 @@ public:
         _file(open_existing()),
         _data(get_data())
     {
+    }
+
+    managed_buffer(
+        BOOST_RV_REF(managed_buffer) other
+    ) :
+        _filename(boost::move(other._filename)),
+        _file(boost::move(other._file)),
+        _data(other._data)
+    {
+    }
+
+    managed_buffer& operator=(
+        BOOST_RV_REF(managed_buffer) other
+    )
+    {
+        _filename = boost::move(other._filename);
+        _file = boost::move(other._file);
+        _data = other._data;
+
+        return *this;
     }
 
     const path_string& filename(

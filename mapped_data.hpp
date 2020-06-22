@@ -26,10 +26,16 @@
 #include "exceptions.hpp"
 #include "mapped_buffer.hpp"
 
+#include <boost/move/utility_core.hpp>
+
 namespace s1b {
 
 class mapped_data : public data_base
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(mapped_data)
+
 private:
 
     static const foffset_t Align = S1B_DATA_ALIGNMENT_BYTES;
@@ -232,6 +238,26 @@ public:
             set_uuid(metadata.file_uuid());
         else
             assert_uuid(metadata.file_uuid());
+    }
+
+    mapped_data(
+        BOOST_RV_REF(mapped_data) other
+    ) :
+        _slot_size(other._slot_size),
+        _buffer(boost::move(other._buffer)),
+        _num_slots(other._num_slots)
+    {
+    }
+
+    mapped_data& operator=(
+        BOOST_RV_REF(mapped_data) other
+    )
+    {
+        _slot_size = other._slot_size;
+        _buffer = boost::move(other._buffer);
+        _num_slots = other._num_slots;
+
+        return *this;
     }
 
     const path_string& filename(

@@ -25,6 +25,9 @@
 
 #include <omp.h>
 
+#define TEST_OBJ_TYPE s1b::rwp_buffer
+#include "move_test.hpp"
+
 namespace {
 
 // TODO unlink
@@ -78,7 +81,8 @@ S1B_TEST(EmptySize)
 
     try
     {
-        s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW);
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_NEW);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_EQ(0, buffer.get_size());
     }
     catch (const std::exception& e)
@@ -94,7 +98,8 @@ S1B_TEST(Filename)
 
     try
     {
-        s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW);
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_NEW);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_STREQ(s1b_file_name, buffer.filename().c_str());
     }
     catch (const std::exception& e)
@@ -135,7 +140,8 @@ S1B_TEST(ReadNothing)
     try
     {
         s1b::foffset_t position = 0;
-        s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_FALSE(buffer.can_write());
         ASSERT_EQ(0, position += buffer.read(data,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
@@ -197,7 +203,8 @@ S1B_TEST(WriteOnReadOnlyFile)
     try
     {
         s1b::foffset_t position = 0;
-        s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_FALSE(buffer.can_write());
         ASSERT_THROW(position += buffer.write(data,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
@@ -243,7 +250,8 @@ void _WriteOn(const char* filename, s1b::open_mode mode)
     try
     {
         s1b::foffset_t position = 0;
-        s1b::rwp_buffer buffer(filename, mode);
+        MAKE_TEST_OBJ(buffer)(filename, mode);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_TRUE(buffer.can_write());
         ASSERT_EQ(0, position += buffer.write(data,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
@@ -304,7 +312,8 @@ S1B_TEST(MixedRWOperations)
 
         {
             s1b::foffset_t position = 0;
-            s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW);
+            MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_NEW);
+            MOVE_TEST_OBJ(buffer);
             ASSERT_TRUE(buffer.can_write());
             ASSERT_EQ(size_1, buffer.write(value_1,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
@@ -344,7 +353,8 @@ S1B_TEST(MixedRWOperations)
             short data_3;
 
             s1b::foffset_t position = 0;
-            s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_WRITE);
+            MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_WRITE);
+            MOVE_TEST_OBJ(buffer);
             ASSERT_TRUE(buffer.can_write());
             ASSERT_EQ(2 + size_1, buffer.read(data_1,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
@@ -388,7 +398,8 @@ S1B_TEST(MixedRWOperations)
             short data_3;
 
             s1b::foffset_t position = 0;
-            s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
+            MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_DEFAULT);
+            MOVE_TEST_OBJ(buffer);
             ASSERT_FALSE(buffer.can_write());
             ASSERT_EQ(2 + size_1, buffer.read(data_1,
 #if !defined(S1B_DISABLE_ATOMIC_RW)
@@ -439,7 +450,8 @@ S1B_TEST(ParallelIOTest)
 
     try
     {
-        s1b::rwp_buffer buffer(s1b_file_name, s1b::S1B_OPEN_NEW);
+        MAKE_TEST_OBJ(buffer)(s1b_file_name, s1b::S1B_OPEN_NEW);
+        MOVE_TEST_OBJ(buffer);
         ASSERT_TRUE(buffer.can_write());
 
         int num_threads = 0;

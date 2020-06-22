@@ -25,6 +25,8 @@
 #define S1B_STATIC_STRING_SIZE 259
 #endif
 
+#include <boost/move/utility_core.hpp>
+
 #include <algorithm>
 #include <string>
 
@@ -131,6 +133,10 @@ class path_string
 {
 private:
 
+    BOOST_COPYABLE_AND_MOVABLE(path_string)
+
+private:
+
     std::string _str;
 
 public:
@@ -160,6 +166,28 @@ public:
     ) :
         _str(other._str)
     {
+    }
+
+    path_string(
+        BOOST_RV_REF(path_string) other
+    ) : _str(boost::move(other._str))
+    {
+    }
+
+    path_string& operator =(
+        BOOST_COPY_ASSIGN_REF(path_string) other
+    )
+    {
+        _str = other._str;
+        return *this;
+    }
+
+    path_string& operator =(
+        BOOST_RV_REF(path_string) other
+    )
+    {
+        _str = boost::move(other._str);
+        return *this;
     }
 
     size_t size(

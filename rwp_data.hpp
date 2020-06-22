@@ -29,11 +29,16 @@
 
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <boost/move/utility_core.hpp>
 
 namespace s1b {
 
 class rwp_data : public data_base
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(rwp_data)
+
 private:
 
     static const foffset_t Align = data_base::Align;
@@ -244,6 +249,28 @@ public:
             write_uuid(metadata.file_uuid()) :
             assert_uuid(metadata.file_uuid()))
     {
+    }
+
+    rwp_data(
+        BOOST_RV_REF(rwp_data) other
+    ) :
+        _slot_size(other._slot_size),
+        _buffer(boost::move(other._buffer)),
+        _num_slots(other._num_slots),
+        _meta_uuid(boost::move(other._meta_uuid))
+    {
+    }
+
+    rwp_data& operator=(
+        BOOST_RV_REF(rwp_data) other
+    )
+    {
+        _slot_size = other._slot_size;
+        _buffer = boost::move(other._buffer);
+        _num_slots = other._num_slots;
+        _meta_uuid = boost::move(other._meta_uuid);
+
+        return *this;
     }
 
     const path_string& filename(

@@ -28,11 +28,16 @@
 #include "push_buffer.hpp"
 
 #include <boost/uuid/uuid.hpp>
+#include <boost/move/utility_core.hpp>
 
 namespace s1b {
 
 class push_data : public data_base
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(push_data)
+
 private:
 
     static const foffset_t Align = S1B_DATA_ALIGNMENT_BYTES;
@@ -117,6 +122,26 @@ public:
         _slot_size(assert_slot_size(_buffer.get_size())) // TODO fail if size mismatch
     {
         _buffer.seek(_slot_size + data_base::get_data_offset());
+    }
+
+    push_data(
+        BOOST_RV_REF(push_data) other
+    ) :
+        _buffer(boost::move(other._buffer)),
+        _meta_uuid(boost::move(other._meta_uuid)),
+        _slot_size(other._slot_size)
+    {
+    }
+
+    push_data& operator=(
+        BOOST_RV_REF(push_data) other
+    )
+    {
+        _buffer = boost::move(other._buffer);
+        _meta_uuid = boost::move(other._meta_uuid);
+        _slot_size = other._slot_size;
+
+        return *this;
     }
 
     const path_string& filename(

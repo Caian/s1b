@@ -26,10 +26,16 @@
 #include "path_string.hpp"
 #include "os/functions.hpp"
 
+#include <boost/move/utility_core.hpp>
+
 namespace s1b {
 
 class rwp_buffer
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(rwp_buffer)
+
 private:
 
     /** The permission when creating file, user read+write. */
@@ -68,6 +74,33 @@ public:
                  0),
             file_sharing_mode))
     {
+    }
+
+    rwp_buffer(
+        BOOST_RV_REF(rwp_buffer) other
+    ) :
+        _filename(boost::move(other._filename)),
+        _can_write(other._can_write),
+        _fd(other._fd)
+    {
+        other._can_write = false;
+        other._fd = os::functions::FD_Invalid;
+    }
+
+    rwp_buffer& operator=(
+        BOOST_RV_REF(rwp_buffer) other
+    )
+    {
+        os::functions::close_unchecked(_fd);
+
+        _filename = boost::move(other._filename);
+        _can_write = other._can_write;
+        _fd = other._fd;
+
+        other._can_write = false;
+        other._fd = os::functions::FD_Invalid;
+
+        return *this;
     }
 
     const path_string& filename(
