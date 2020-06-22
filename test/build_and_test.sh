@@ -38,7 +38,10 @@ fail_build_dir() {
         exit 1
     fi
     for test_cpp in "$TEST_DIR/$what"/*.cpp ; do
-        NFAIL=$(cat $test_cpp | grep $key | wc -l)
+        test_pre=${test_cpp}.pre
+        $CXX $test_cpp $CXXFLAGS $flags -fopenmp -E >$test_pre || exit 1
+        NFAIL=$(cat $test_pre | grep "$key" | wc -l)
+        echo $test_cpp $NFAIL...
         if [ "$NFAIL" == "" ] ; then
             echo "Fail to grep $test_cpp!"
             exit 1
@@ -71,5 +74,5 @@ build_and_test_dir .
 build_and_test_dir . "-DS1B_DISABLE_ATOMIC_RW" "-DTEST_MOVE"
 build_and_test_dir . "-DTEST_MOVE"
 
-fail_build_dir . "MOVE_TEST" "is private" "-DS1B_DISABLE_ATOMIC_RW" "-DTEST_COPY"
-fail_build_dir . "MOVE_TEST" "is private" "-DTEST_COPY"
+fail_build_dir . "(original_" "is private" "-DS1B_DISABLE_ATOMIC_RW" "-DTEST_COPY"
+fail_build_dir . "(original_" "is private" "-DTEST_COPY"
