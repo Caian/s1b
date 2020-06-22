@@ -27,6 +27,9 @@
 #include <s1b/rwp_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
 
+#define TEST_OBJ_TYPE test_index
+#include "move_test.hpp"
+
 namespace {
 
 // TODO unlink
@@ -197,8 +200,9 @@ S1B_TEST(Filename)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_STREQ(s1b_file_name, index.filename().c_str());
     }
@@ -233,8 +237,9 @@ S1B_TEST(Size)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(initial_size + size_increment, index.size());
         ASSERT_GE(initial_size + size_increment, index.get_used_bytes());
@@ -270,8 +275,9 @@ S1B_TEST(IndexId)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_STREQ("s1b::managed_index/s1b::indexing::ordered_sequence/"
             "test_key", index.get_index_id());
@@ -307,8 +313,9 @@ S1B_TEST(IndexUUid)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(metadata.file_uuid(), index.get_metadata_uuid());
     }
@@ -343,8 +350,9 @@ S1B_TEST(AlwaysReadOnly)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(false, index.can_write());
     }
@@ -374,8 +382,9 @@ S1B_TEST(EmptyIndex)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(0, index.get_index()->size());
         ASSERT_NO_THROW(begin = index.get_index()->begin());
@@ -415,8 +424,9 @@ S1B_TEST(ValidIndex)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_NO_THROW(begin = index.get_index()->begin());

@@ -20,6 +20,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "macros.hpp"
 #include "open_mode.hpp"
 #include "exceptions.hpp"
 #include "path_string.hpp"
@@ -28,10 +29,16 @@
 #include "hugetlb_state.hpp"
 #include "memory_region.hpp"
 
+#include <boost/move/utility_core.hpp>
+
 namespace s1b {
 
 class mapped_buffer
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(mapped_buffer)
+
 private:
 
     /** The permission when creating file, user read+write. */
@@ -194,6 +201,33 @@ public:
     {
     }
 
+    mapped_buffer(
+        BOOST_RV_REF(mapped_buffer) other
+    ) :
+        _filename(boost::move(other._filename)),
+        _can_write(other._can_write),
+        _memory_region(other._memory_region)
+    {
+        other._can_write = false;
+        other._memory_region = memory_region();
+    }
+
+    mapped_buffer& operator=(
+        BOOST_RV_REF(mapped_buffer) other
+    )
+    {
+        os::functions::munmap(_memory_region.address, _memory_region.size);
+
+        _filename = boost::move(other._filename);
+        _can_write = other._can_write;
+        _memory_region = other._memory_region;
+
+        other._can_write = false;
+        other._memory_region = memory_region();
+
+        return *this;
+    }
+
     const path_string& filename(
     ) const
     {
@@ -284,7 +318,8 @@ public:
     virtual ~mapped_buffer(
     )
     {
-        os::functions::munmap(_memory_region.address, _memory_region.size);
+        if (_memory_region.address != 0)
+            os::functions::munmap(_memory_region.address, _memory_region.size);
     }
 };
 

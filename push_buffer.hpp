@@ -26,12 +26,18 @@
 #include "path_string.hpp"
 #include "os/functions.hpp"
 
+#include <boost/move/utility_core.hpp>
+
 #include <algorithm>
 
 namespace s1b {
 
 class push_buffer
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(push_buffer)
+
 private:
 
     /** The permission when creating file, user read+write. */
@@ -45,7 +51,7 @@ private:
     path_string _filename;
     os::fd_type _fd;
     foffset_t _buffer_offset;
-    char* _data_buffer;
+    char* _data_buffer; // TODO static buffer flag
 
     void flush(
     )
@@ -76,6 +82,35 @@ public:
         _data_buffer(new char[BufferSize])
     {
         seek(get_size());
+    }
+
+    push_buffer(
+        BOOST_RV_REF(push_buffer) other
+    ) :
+        _filename(boost::move(other._filename)),
+        _fd(other._fd),
+        _buffer_offset(other._buffer_offset),
+        _data_buffer(other._data_buffer)
+    {
+        other._fd = os::functions::FD_Invalid;
+        other._data_buffer = 0;
+    }
+
+    push_buffer& operator=(
+        BOOST_RV_REF(push_buffer) other
+    )
+    {
+        os::functions::close_unchecked(_fd);
+
+        _filename = boost::move(other._filename);
+        _fd = other._fd;
+        _buffer_offset = other._buffer_offset;
+        _data_buffer = other._data_buffer;
+
+        other._fd = os::functions::FD_Invalid;
+        other._data_buffer = 0;
+
+        return *this;
     }
 
     const path_string& filename(

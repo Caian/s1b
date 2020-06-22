@@ -33,6 +33,9 @@
 #include <vector>
 #include <string>
 
+#define TEST_OBJ_TYPE s1b::push_data
+#include "move_test.hpp"
+
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
@@ -114,7 +117,8 @@ S1B_TEST(OpenAligned) // TODO add to others
     {
         test_rwp_metadata metadata(meta_filename);
 
-        s1b::push_data data(s1b_file_name, true, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, true, metadata);
+        MOVE_TEST_OBJ(data);
         data.align();
         data.sync();
     }
@@ -173,7 +177,8 @@ S1B_TEST(OpenMisligned) // TODO add to others
     {
         test_rwp_metadata metadata(meta_filename);
 
-        s1b::push_data data(s1b_file_name, true, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, true, metadata);
+        MOVE_TEST_OBJ(data);
         data.align();
         data.sync();
     }
@@ -233,7 +238,8 @@ S1B_TEST(Filename)
     {
         test_rwp_metadata metadata(meta_filename);
 
-        s1b::push_data data(s1b_file_name, true, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, true, metadata);
+        MOVE_TEST_OBJ(data);
 
         ASSERT_STREQ(s1b_file_name, data.filename().c_str());
     }
@@ -257,7 +263,8 @@ S1B_TEST(SizeAndSlotSize)
     {
         test_rwp_metadata metadata(meta_filename);
 
-        s1b::push_data data(s1b_file_name, true, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, true, metadata);
+        MOVE_TEST_OBJ(data);
         data.align();
         data.sync();
     }
@@ -297,7 +304,8 @@ S1B_TEST(SizeAndSlotSize)
     {
         test_rwp_metadata metadata(meta_filename, false);
 
-        s1b::push_data data(s1b_file_name, false, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, false, metadata);
+        MOVE_TEST_OBJ(data);
 
         ASSERT_EQ(512, data.slot_size());
         ASSERT_EQ(512 + initial_size, data.get_size());
@@ -325,7 +333,8 @@ S1B_TEST(OpenEmptyAndPush)
     {
         test_rwp_metadata metadata(meta_filename);
 
-        s1b::push_data data(s1b_file_name, true, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, true, metadata);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
         ASSERT_EQ(0, data.slot_size());
@@ -369,7 +378,8 @@ S1B_TEST(AlignAndReOpen)
     {
         test_rwp_metadata metadata(meta_filename);
 
-        s1b::push_data data(s1b_file_name, true, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, true, metadata);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
         ASSERT_EQ(0, data.slot_size());
@@ -402,7 +412,8 @@ S1B_TEST(AlignAndReOpen)
     {
         test_rwp_metadata metadata(meta_filename, false);
 
-        s1b::push_data data(s1b_file_name, false, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, false, metadata);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
         ASSERT_EQ(data.get_size(), data.slot_size() + initial_size);
@@ -477,7 +488,8 @@ S1B_TEST(MappedCompatCreateNewAndPush)
     {
         test_mapped_metadata metadata(meta_filename, false);
 
-        s1b::push_data data(s1b_file_name, false, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, false, metadata);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
@@ -558,7 +570,8 @@ S1B_TEST(RwpCompatCreateNewAndPush)
     {
         test_mapped_metadata metadata(meta_filename, false);
 
-        s1b::push_data data(s1b_file_name, false, metadata);
+        MAKE_TEST_OBJ(data)(s1b_file_name, false, metadata);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 

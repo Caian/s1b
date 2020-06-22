@@ -34,6 +34,7 @@
 #include "traits/global_struct_type.hpp"
 
 #include <boost/uuid/uuid.hpp>
+#include <boost/move/utility_core.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -48,6 +49,10 @@ namespace s1b {
 template <typename MetaAdapter>
 class mapped_metadata : public metadata_base<MetaAdapter>
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(mapped_metadata)
+
 public:
 
     typedef metadata_base<MetaAdapter> base_type;
@@ -287,6 +292,26 @@ public:
         _num_elements(compute_num_elements(_buffer.size()))
     {
         assert_meta_check();
+    }
+
+    mapped_metadata(
+        BOOST_RV_REF(mapped_metadata) other
+    ) :
+        _buffer(boost::move(other._buffer)),
+        _uuid(other._uuid),
+        _num_elements(other._num_elements)
+    {
+    }
+
+    mapped_metadata& operator=(
+        BOOST_RV_REF(mapped_metadata) other
+    )
+    {
+        _buffer = boost::move(other._buffer);
+        _uuid = other._uuid;
+        _num_elements = other._num_elements;
+
+        return *this;
     }
 
     const path_string& filename(

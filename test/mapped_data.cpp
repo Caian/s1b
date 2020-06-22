@@ -35,6 +35,9 @@
 #include <vector>
 #include <string>
 
+#define TEST_OBJ_TYPE s1b::mapped_data
+#include "move_test.hpp"
+
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
@@ -60,12 +63,12 @@ void __Open(
 
     if (throws_exception)
     {
-        ASSERT_THROW(s1b::mapped_data data(filename, mode, metadata,
+        ASSERT_THROW(MAKE_TEST_OBJ(data)(filename, mode, metadata,
             slots, s1b::S1B_HUGETLB_OFF), Exception);
     }
     else
     {
-        ASSERT_NO_THROW(s1b::mapped_data data(filename,
+        ASSERT_NO_THROW(MAKE_TEST_OBJ(data)(filename,
             mode, metadata, slots, s1b::S1B_HUGETLB_OFF));
     }
 }
@@ -480,8 +483,10 @@ S1B_TEST(Filename)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_NEW,
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW,
             metadata, 1, s1b::S1B_HUGETLB_OFF);
+
+        MOVE_TEST_OBJ(data);
 
         ASSERT_STREQ(s1b_file_name, data.filename().c_str());
     }
@@ -531,8 +536,10 @@ S1B_TEST(SizeAndSlotSize)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_NEW,
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW,
             metadata, 3, s1b::S1B_HUGETLB_OFF);
+
+        MOVE_TEST_OBJ(data);
 
         ASSERT_EQ(3 * data.slot_size() + initial_size, data.size());
     }
@@ -570,8 +577,11 @@ S1B_TEST(ReadWriteMultipleSlotFromMetadata)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end(), s1b::S1B_HUGETLB_OFF);
 
-        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5,
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5,
             s1b::S1B_HUGETLB_OFF);
+
+        MOVE_TEST_OBJ(data);
+
         const s1b::mapped_data& cdata = data;
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(5, data.num_slots());
@@ -617,8 +627,11 @@ S1B_TEST(ReadWriteMultipleSlotFromMetadata)
         test_mapped_metadata metadata(meta_filename,
             false, s1b::S1B_HUGETLB_OFF);
 
-        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_DEFAULT,
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_DEFAULT,
             metadata, 0, s1b::S1B_HUGETLB_OFF);
+
+        MOVE_TEST_OBJ(data);
+
         const s1b::mapped_data& cdata = data;
         ASSERT_FALSE(data.can_write());
         ASSERT_EQ(5, data.num_slots());
@@ -685,8 +698,11 @@ S1B_TEST(ReadWriteMultipleSlotObjectsFromMetadata)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end(), s1b::S1B_HUGETLB_OFF);
 
-        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5,
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5,
             s1b::S1B_HUGETLB_OFF);
+
+        MOVE_TEST_OBJ(data);
+
         const s1b::mapped_data& cdata = data;
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(5, data.num_slots());
@@ -735,8 +751,11 @@ S1B_TEST(ReadWriteMultipleSlotObjectsFromMetadata)
         test_mapped_metadata metadata(meta_filename,
             false, s1b::S1B_HUGETLB_OFF);
 
-        s1b::mapped_data data(s1b_file_name, s1b::S1B_OPEN_DEFAULT,
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_DEFAULT,
             metadata, 0, s1b::S1B_HUGETLB_OFF);
+
+        MOVE_TEST_OBJ(data);
+
         const s1b::mapped_data& cdata = data;
         ASSERT_FALSE(data.can_write());
         ASSERT_EQ(5, data.num_slots());
@@ -844,7 +863,10 @@ void _RwpCompatCreateNew(const char* filename, bool can_write)
         s1b::open_mode mode = can_write ? s1b::S1B_OPEN_WRITE :
             s1b::S1B_OPEN_DEFAULT;
 
-        s1b::mapped_data data(filename, mode, metadata, 0);
+        MAKE_TEST_OBJ(data)(filename, mode, metadata, 0);
+
+        MOVE_TEST_OBJ(data);
+
         ASSERT_EQ(can_write, data.can_write());
         ASSERT_EQ(5, data.num_slots());
 

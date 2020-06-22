@@ -28,6 +28,9 @@
 
 #include <vector>
 
+#define TEST_OBJ_TYPE test_push_metadata
+#include "move_test.hpp"
+
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
@@ -104,7 +107,8 @@ S1B_TEST(GetSize)
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_NO_THROW(metadata.get_size());
     }
     catch (const std::exception& e)
@@ -133,8 +137,9 @@ S1B_TEST(GetDataSize)
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, meta_vector.begin(),
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, meta_vector.begin(),
             meta_vector.end(), glob);
+        MOVE_TEST_OBJ(metadata);
 
         // Probably will be greater due to alignment
         ASSERT_LE(size, metadata.get_data_size());
@@ -156,8 +161,9 @@ S1B_TEST(GetDataSizeEmpty)
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, meta_vector.begin(),
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, meta_vector.begin(),
             meta_vector.end(), glob);
+        MOVE_TEST_OBJ(metadata);
 
         ASSERT_EQ(0, metadata.get_data_size());
     }
@@ -175,7 +181,8 @@ S1B_TEST(GetMetaAdapter)
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_NO_THROW(metadata.meta_adapter());
     }
     catch (const std::exception& e)
@@ -192,7 +199,8 @@ S1B_TEST(GetGlobalStruct)
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_NO_THROW(metadata.global_struct());
     }
     catch (const std::exception& e)
@@ -209,7 +217,8 @@ S1B_TEST(EmptyLastUID)
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_EQ(0, metadata.get_last_uid());
     }
     catch (const std::exception& e)
@@ -227,7 +236,8 @@ S1B_TEST(OpenAligned) // TODO add to others
     {
         test_metadata meta;
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_TRUE(sizeof(meta) % 64 != 0);
         ASSERT_NO_THROW(metadata.push(meta));
         ASSERT_NO_THROW(metadata.align());
@@ -248,7 +258,8 @@ S1B_TEST(OpenMisligned) // TODO add to others
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_NO_THROW(metadata.align());
     }
     catch (const std::exception& e)
@@ -291,7 +302,8 @@ S1B_TEST(Filename)
     try
     {
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_STREQ(s1b_file_name, metadata.filename().c_str());
     }
     catch (const std::exception& e)
@@ -337,7 +349,8 @@ S1B_TEST(PushOnWriteableFile)
         s1b::foffset_t size;
         initialize_metadata::small_1(meta);
 
-        test_push_metadata metadata(s1b_file_name);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_TRUE(metadata.can_write());
         ASSERT_EQ(s1b::FirstUID + 0, metadata.push(meta));
         ASSERT_EQ(s1b::FirstUID + 1, metadata.push(meta, offset));
@@ -368,7 +381,8 @@ S1B_TEST(PushOnNewFile)
         initialize_metadata::small_1(meta);
 
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_TRUE(metadata.can_write());
         ASSERT_EQ(uid_0, metadata.push(meta));
         ASSERT_EQ(uid_1, metadata.push(meta, offset));
@@ -398,7 +412,8 @@ S1B_TEST(PushFixedOnWriteableFile)
         s1b::foffset_t size, size2;
         initialize_metadata::small_1(meta);
 
-        test_push_metadata metadata(s1b_file_name);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_TRUE(metadata.can_write());
         ASSERT_EQ(s1b::FirstUID + 0, metadata.push_fixed(
             meta, 0, size));
@@ -440,7 +455,8 @@ S1B_TEST(PushFixedOnNewFile)
         initialize_metadata::small_1(meta);
 
         test_global_data glob;
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_TRUE(metadata.can_write());
         ASSERT_EQ(s1b::FirstUID + 0, metadata.push_fixed(
             meta, 0, size));
@@ -565,8 +581,9 @@ S1B_TEST(MixedPushOperations)
             test_metadata meta_ref;
             test_metadata meta;
             test_global_data glob;
-            test_push_metadata metadata(s1b_file_name, meta_vector.begin(),
+            MAKE_TEST_OBJ(metadata)(s1b_file_name, meta_vector.begin(),
                 meta_vector.end(), glob);
+            MOVE_TEST_OBJ(metadata);
             ASSERT_TRUE(metadata.can_write());
             for (unsigned int i = 21; i <= 123; i++)
             {
@@ -584,7 +601,8 @@ S1B_TEST(MixedPushOperations)
 
         {
             test_metadata meta_ref;
-            test_push_metadata metadata(s1b_file_name);
+            MAKE_TEST_OBJ(metadata)(s1b_file_name);
+            MOVE_TEST_OBJ(metadata);
             ASSERT_TRUE(metadata.can_write());
             for (unsigned int i = 201; i <= 203; i++)
             {
@@ -619,7 +637,8 @@ S1B_TEST(UuidIsUniqueAndValid)
 
     try
     {
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_NO_THROW(uuid1 = metadata.file_uuid());
         ASSERT_FALSE(uuid1.is_nil());
     }
@@ -633,7 +652,8 @@ S1B_TEST(UuidIsUniqueAndValid)
 
     try
     {
-        test_push_metadata metadata(s1b_file_name, glob);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name, glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_NO_THROW(uuid2 = metadata.file_uuid());
         ASSERT_FALSE(uuid2.is_nil());
     }
@@ -649,9 +669,10 @@ S1B_TEST(UuidIsUniqueAndValid)
 
     try
     {
-        test_push_metadata metadata(s1b_file_name,
+        MAKE_TEST_OBJ(metadata)(s1b_file_name,
             meta_vector.begin(), meta_vector.end(),
             glob);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_NO_THROW(uuid3 = metadata.file_uuid());
         ASSERT_FALSE(uuid3.is_nil());
     }
@@ -704,7 +725,8 @@ S1B_TEST(MappedCompatCreateNew)
     try
     {
         test_metadata meta;
-        test_push_metadata metadata(s1b_file_name);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_EQ(true, metadata.can_write());
         ASSERT_EQ(uuid, metadata.file_uuid());
         for (unsigned int i = 1001; i <= 1500; i++)
@@ -767,7 +789,8 @@ S1B_TEST(RWPCompatCreateNew)
     try
     {
         test_metadata meta;
-        test_push_metadata metadata(s1b_file_name);
+        MAKE_TEST_OBJ(metadata)(s1b_file_name);
+        MOVE_TEST_OBJ(metadata);
         ASSERT_EQ(true, metadata.can_write());
         ASSERT_EQ(uuid, metadata.file_uuid());
         for (unsigned int i = 1011; i <= 1500; i++)

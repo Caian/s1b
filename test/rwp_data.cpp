@@ -34,6 +34,9 @@
 #include <vector>
 #include <string>
 
+#define TEST_OBJ_TYPE s1b::rwp_data
+#include "move_test.hpp"
+
 namespace {
 
 typedef s1b::rwp_metadata<test_adapter> test_rwp_metadata;
@@ -60,12 +63,12 @@ void __Open(
 
     if (throws_exception)
     {
-        ASSERT_THROW(s1b::rwp_data data(filename, mode, metadata, slots),
+        ASSERT_THROW(MAKE_TEST_OBJ(data)(filename, mode, metadata, slots),
             Exception);
     }
     else
     {
-        ASSERT_NO_THROW(s1b::rwp_data data(filename,
+        ASSERT_NO_THROW(MAKE_TEST_OBJ(data)(filename,
             mode, metadata, slots));
     }
 }
@@ -89,7 +92,7 @@ void _Open(
         Metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        ASSERT_NO_THROW(s1b::rwp_data data(filename, s1b::S1B_OPEN_NEW,
+        ASSERT_NO_THROW(MAKE_TEST_OBJ(data)(filename, s1b::S1B_OPEN_NEW,
             metadata, existing_slots));
     }
 
@@ -105,7 +108,7 @@ void _Open(
         Metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        ASSERT_NO_THROW(s1b::rwp_data data(filename, s1b::S1B_OPEN_NEW,
+        ASSERT_NO_THROW(MAKE_TEST_OBJ(data)(filename, s1b::S1B_OPEN_NEW,
             metadata, existing_slots));
     }
 
@@ -476,10 +479,10 @@ void _EmptyMetadataRWP(
         test_rwp_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        ASSERT_NO_THROW(s1b::rwp_data data(filename, s1b::S1B_OPEN_NEW,
+        ASSERT_NO_THROW(MAKE_TEST_OBJ(data)(filename, s1b::S1B_OPEN_NEW,
             metadata, std::max(slots, 1U)));
 
-        ASSERT_THROW(s1b::rwp_data data(filename, mode, metadata, slots),
+        ASSERT_THROW(MAKE_TEST_OBJ(data)(filename, mode, metadata, slots),
             s1b::invalid_data_layout_exception);
     }
     catch (const std::exception& e)
@@ -530,7 +533,8 @@ S1B_TEST(Filename)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MOVE_TEST_OBJ(data);
 
         ASSERT_STREQ(s1b_file_name, data.filename().c_str());
     }
@@ -556,7 +560,8 @@ S1B_TEST(SizeAndSlotSize)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 3);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 3);
+        MOVE_TEST_OBJ(data);
 
         ASSERT_NO_THROW(initial_size = data.get_size());
     }
@@ -580,7 +585,8 @@ S1B_TEST(SizeAndSlotSize)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 3);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 3);
+        MOVE_TEST_OBJ(data);
 
         ASSERT_EQ(initial_size + 3 * data.slot_size(), data.get_size());
     }
@@ -608,7 +614,8 @@ S1B_TEST(OpenEmptyAndPush)
         test_rwp_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
@@ -647,7 +654,8 @@ S1B_TEST(OpenEmptyAndPushReadWrite)
         test_rwp_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
@@ -701,7 +709,8 @@ S1B_TEST(PushMisaligned)
         test_rwp_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 1);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         s1b::foffset_t initial_size;
         ASSERT_NO_THROW(initial_size = data.get_size());
@@ -745,7 +754,8 @@ S1B_TEST(ReadWriteMultipleSlotFromMetadata)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end(), s1b::S1B_HUGETLB_OFF);
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(5, data.num_slots());
 
@@ -796,7 +806,8 @@ S1B_TEST(ReadWriteMultipleSlotFromMetadata)
         test_mapped_metadata metadata(meta_filename,
             false, s1b::S1B_HUGETLB_OFF);
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_DEFAULT, metadata, 0);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_DEFAULT, metadata, 0);
+        MOVE_TEST_OBJ(data);
         ASSERT_FALSE(data.can_write());
         ASSERT_EQ(5, data.num_slots());
 
@@ -860,7 +871,8 @@ S1B_TEST(PushMultipleSlot)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end(), s1b::S1B_HUGETLB_OFF);
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_NEW, metadata, 5);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(5, data.num_slots());
 
@@ -953,7 +965,8 @@ void _MappedCompatCreateNew(const char* filename, bool can_write)
         s1b::open_mode mode = can_write ? s1b::S1B_OPEN_WRITE :
             s1b::S1B_OPEN_DEFAULT;
 
-        s1b::rwp_data data(filename, mode, metadata, 0);
+        MAKE_TEST_OBJ(data)(filename, mode, metadata, 0);
+        MOVE_TEST_OBJ(data);
         ASSERT_EQ(can_write, data.can_write());
         ASSERT_EQ(5, data.num_slots());
 
@@ -1068,7 +1081,8 @@ S1B_TEST(MappedCompatCreateNewAndPush)
         test_mapped_metadata metadata(meta_filename, false,
             s1b::S1B_HUGETLB_OFF);
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_WRITE, metadata, 0);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_WRITE, metadata, 0);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
@@ -1154,7 +1168,8 @@ void _PushCompatCreateNew(const char* filename, bool can_write)
         s1b::open_mode mode = can_write ? s1b::S1B_OPEN_WRITE :
             s1b::S1B_OPEN_DEFAULT;
 
-        s1b::rwp_data data(filename, mode, metadata, 0);
+        MAKE_TEST_OBJ(data)(filename, mode, metadata, 0);
+        MOVE_TEST_OBJ(data);
         ASSERT_EQ(can_write, data.can_write());
         ASSERT_EQ(1, data.num_slots());
 
@@ -1264,7 +1279,8 @@ S1B_TEST(PushCompatCreateNewAndPush)
         test_mapped_metadata metadata(meta_filename, false,
             s1b::S1B_HUGETLB_OFF);
 
-        s1b::rwp_data data(s1b_file_name, s1b::S1B_OPEN_WRITE, metadata, 0);
+        MAKE_TEST_OBJ(data)(s1b_file_name, s1b::S1B_OPEN_WRITE, metadata, 0);
+        MOVE_TEST_OBJ(data);
         ASSERT_TRUE(data.can_write());
         ASSERT_EQ(1, data.num_slots());
 

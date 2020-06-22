@@ -30,6 +30,9 @@
 #include <s1b/rwp_metadata.hpp>
 #include <s1b/mapped_metadata.hpp>
 
+#define TEST_OBJ_TYPE test_index
+#include "move_test.hpp"
+
 namespace {
 
 // TODO unlink
@@ -205,8 +208,9 @@ S1B_TEST(Filename)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_STREQ(s1b_file_name, index.filename().c_str());
     }
@@ -241,8 +245,9 @@ S1B_TEST(Size)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(initial_size + size_increment, index.size());
         ASSERT_GE(initial_size + size_increment, index.get_used_bytes());
@@ -278,8 +283,9 @@ S1B_TEST(IndexId)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_STREQ("s1b::managed_index/s1b::indexing::ordered_index/"
             "test_key", index.get_index_id());
@@ -315,8 +321,9 @@ S1B_TEST(IndexUUid)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(metadata.file_uuid(), index.get_metadata_uuid());
     }
@@ -351,8 +358,9 @@ S1B_TEST(AlwaysReadOnly)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(false, index.can_write());
     }
@@ -382,8 +390,9 @@ S1B_TEST(EmptyIndex)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(0, index.get_index()->size());
         ASSERT_NO_THROW(begin = index.get_index()->begin());
@@ -423,8 +432,9 @@ S1B_TEST(ValidIndex)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_NO_THROW(begin = index.get_index()->begin());
@@ -494,8 +504,9 @@ S1B_TEST(EmptyRange)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(0, index.get_index()->size());
         ASSERT_THROW(index.get_index()->get_range(),
@@ -560,8 +571,9 @@ S1B_TEST(Range)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_NO_THROW(index_pair = index.get_index()->get_range());
@@ -621,8 +633,9 @@ S1B_TEST(QueryEmpty)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key key_min, key_max;
         key_min.x = 10;
@@ -687,8 +700,9 @@ S1B_TEST(QueryAll)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_NO_THROW(index.get_index()->query(
@@ -754,8 +768,9 @@ S1B_TEST(QueryEmptyLowerDistinct)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key = key_min;
         lower_key.x -= 1000;
@@ -818,8 +833,9 @@ S1B_TEST(QueryEmptyUpperDistinct)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key = key_max;
         lower_key.x += 1000;
@@ -882,8 +898,9 @@ S1B_TEST(QueryEmptyLowerEqual)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key = key_min;
         lower_key.x -= 1000;
@@ -943,8 +960,9 @@ S1B_TEST(QueryEmptyUpperEqual)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key = key_max;
         lower_key.x += 1000;
@@ -1008,8 +1026,9 @@ S1B_TEST(QueryOneFirst)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key = key_min;
 
@@ -1081,8 +1100,9 @@ S1B_TEST(QueryOneLast)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key = key_max;
 
@@ -1142,8 +1162,9 @@ S1B_TEST(QueryOneMiddle)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key(meta_vector[i_middle]);
 
@@ -1219,8 +1240,9 @@ S1B_TEST(QuerySomeLeft)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_NO_THROW(index.get_index()->query(
@@ -1292,8 +1314,9 @@ S1B_TEST(QuerySomeRight)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_NO_THROW(index.get_index()->query(
@@ -1365,8 +1388,9 @@ S1B_TEST(QuerySomeMiddle)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_NO_THROW(index.get_index()->query(
@@ -1407,8 +1431,9 @@ S1B_TEST(AtEmpty)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key key;
         key.x = 10;
@@ -1456,8 +1481,9 @@ S1B_TEST(AtOneMiddle)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         test_key lower_key(meta_vector[i_middle]);
 
@@ -1503,8 +1529,9 @@ S1B_TEST(AtSomeMiddle)
         test_mapped_metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-        test_index index(s1b_file_name, metadata,
+        MAKE_TEST_OBJ(index)(s1b_file_name, metadata,
             initial_size, 1, size_increment);
+        MOVE_TEST_OBJ(index);
 
         ASSERT_EQ(1000, index.get_index()->size());
         ASSERT_THROW(s1b::queries::at(*index.get_index(), key),

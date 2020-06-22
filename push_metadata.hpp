@@ -35,6 +35,7 @@
 #include "helpers/seekrw_proxy.hpp"
 
 #include <boost/uuid/uuid.hpp>
+#include <boost/move/utility_core.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -53,6 +54,10 @@ class push_metadata : public rwp_metadata_base<MetaAdapter,
 #endif
     >
 {
+private:
+
+   BOOST_MOVABLE_BUT_NOT_COPYABLE(push_metadata)
+
 public:
 
     typedef
@@ -341,6 +346,30 @@ public:
         assert_meta_check();
         // TODO assert valid size
         align_file();
+    }
+
+    push_metadata(
+        BOOST_RV_REF(push_metadata) other
+    ) :
+        _buffer(boost::move(other._buffer)),
+        _uuid(boost::move(other._uuid)),
+        _global_struct(boost::move(other._global_struct)),
+        _next_uid(other._next_uid),
+        _next_data_offset(other._next_data_offset)
+    {
+    }
+
+    push_metadata& operator=(
+        BOOST_RV_REF(push_metadata) other
+    )
+    {
+        _buffer = boost::move(other._buffer);
+        _uuid = boost::move(other._uuid);
+        _global_struct = boost::move(other._global_struct);
+        _next_uid = other._next_uid;
+        _next_data_offset = other._next_data_offset;
+
+        return *this;
     }
 
     const path_string& filename(
