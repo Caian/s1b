@@ -29,7 +29,7 @@ struct drop_ref
     typedef T value_type;
     typedef T reference;
 
-    value_type operator()(
+    value_type operator ()(
         const T& val
     ) const
     {

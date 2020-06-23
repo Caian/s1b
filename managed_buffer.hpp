@@ -97,7 +97,6 @@ private:
             p = _file.find<
                 managed_pointer
                 >(get_data_name());
-
         }
         catch (const std::exception& ex)
         {
@@ -229,7 +228,7 @@ public:
     {
     }
 
-    managed_buffer& operator=(
+    managed_buffer& operator =(
         BOOST_RV_REF(managed_buffer) other
     )
     {

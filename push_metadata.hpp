@@ -359,7 +359,7 @@ public:
     {
     }
 
-    push_metadata& operator=(
+    push_metadata& operator =(
         BOOST_RV_REF(push_metadata) other
     )
     {

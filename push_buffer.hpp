@@ -96,7 +96,7 @@ public:
         other._data_buffer = 0;
     }
 
-    push_buffer& operator=(
+    push_buffer& operator =(
         BOOST_RV_REF(push_buffer) other
     )
     {

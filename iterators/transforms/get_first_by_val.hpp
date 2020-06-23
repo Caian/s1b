@@ -38,7 +38,7 @@ struct get_first_by_val
     typedef const T& result_type;
 
     template <typename Second>
-    result_type operator()(
+    result_type operator ()(
         const std::pair<T, Second>& val
     ) const
     {

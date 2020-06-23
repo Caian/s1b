@@ -87,7 +87,7 @@ public:
         other._fd = os::functions::FD_Invalid;
     }
 
-    rwp_buffer& operator=(
+    rwp_buffer& operator =(
         BOOST_RV_REF(rwp_buffer) other
     )
     {

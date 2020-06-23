@@ -271,7 +271,7 @@ public:
     {
     }
 
-    managed_index& operator=(
+    managed_index& operator =(
         BOOST_RV_REF(managed_index) other
     )
     {

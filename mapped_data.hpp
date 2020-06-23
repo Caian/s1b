@@ -249,7 +249,7 @@ public:
     {
     }
 
-    mapped_data& operator=(
+    mapped_data& operator =(
         BOOST_RV_REF(mapped_data) other
     )
     {

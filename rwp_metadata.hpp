@@ -336,7 +336,7 @@ public:
     {
     }
 
-    rwp_metadata& operator=(
+    rwp_metadata& operator =(
         BOOST_RV_REF(rwp_metadata) other
     )
     {

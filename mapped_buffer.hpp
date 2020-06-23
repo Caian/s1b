@@ -212,7 +212,7 @@ public:
         other._memory_region = memory_region();
     }
 
-    mapped_buffer& operator=(
+    mapped_buffer& operator =(
         BOOST_RV_REF(mapped_buffer) other
     )
     {

@@ -133,7 +133,7 @@ public:
     {
     }
 
-    push_data& operator=(
+    push_data& operator =(
         BOOST_RV_REF(push_data) other
     )
     {

@@ -261,7 +261,7 @@ public:
     {
     }
 
-    rwp_data& operator=(
+    rwp_data& operator =(
         BOOST_RV_REF(rwp_data) other
     )
     {

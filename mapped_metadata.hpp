@@ -303,7 +303,7 @@ public:
     {
     }
 
-    mapped_metadata& operator=(
+    mapped_metadata& operator =(
         BOOST_RV_REF(mapped_metadata) other
     )
     {
