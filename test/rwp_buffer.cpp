@@ -257,9 +257,6 @@ S1B_TEST(MixedRWOperations)
             MOVE_TEST_OBJ(buffer);
             ASSERT_TRUE(buffer.can_write());
             ASSERT_EQ(size_1, buffer.write(value_1, position, size_1));
-#if defined(S1B_DISABLE_ATOMIC_RW)
-            ASSERT_EQ(2, buffer.seek(2));
-#endif
             position = 2;
             ASSERT_EQ(size_1, buffer.write(value_1, position, size_1));
             position += size_1;
@@ -294,9 +291,6 @@ S1B_TEST(MixedRWOperations)
             ASSERT_EQ(2 + size_1 + sizeof(value_2) + sizeof(value_3),
                 buffer.get_size());
             position = 2 + size_1 + sizeof(value_2) + sizeof(value_3);
-#if defined(S1B_DISABLE_ATOMIC_RW)
-            ASSERT_EQ(position, buffer.seek(position));
-#endif
             ASSERT_EQ(sizeof(value_2), buffer.write_object(value_2, position));
             ASSERT_NO_THROW(buffer.sync());
         }

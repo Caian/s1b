@@ -275,9 +275,6 @@ S1B_TEST(OpenMisligned) // TODO add to others
         s1b::rwp_buffer metadata(s1b_file_name, s1b::S1B_OPEN_WRITE);
         const s1b::foffset_t position = metadata.get_size();
         ASSERT_TRUE(position % 64 == 0);
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        ASSERT_NO_THROW(metadata.seek(position));
-#endif
         ASSERT_NO_THROW(metadata.write("", position, 1));
         ASSERT_TRUE(metadata.get_size() % 64 != 0);
     }

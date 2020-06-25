@@ -136,9 +136,6 @@ S1B_TEST(OpenAligned) // TODO add to others
 
         s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_WRITE);
         const s1b::foffset_t off = data.get_size();
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        ASSERT_NO_THROW(data.seek(off));
-#endif
         ASSERT_NO_THROW(data.write(test_data, off, sizeof(test_data)));
     }
     catch (const std::exception& e)
@@ -192,9 +189,6 @@ S1B_TEST(OpenMisligned) // TODO add to others
 
         s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_WRITE);
         const s1b::foffset_t off = data.get_size();
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        ASSERT_NO_THROW(data.seek(off));
-#endif
         ASSERT_NO_THROW(data.write(test_data, off, sizeof(test_data)));
     }
     catch (const std::exception& e)
@@ -275,9 +269,6 @@ S1B_TEST(SizeAndSlotSize)
         s1b::rwp_buffer data(s1b_file_name, s1b::S1B_OPEN_WRITE);
         ASSERT_NO_THROW(initial_size = data.get_size());
         const s1b::foffset_t off = data.get_size();
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        ASSERT_NO_THROW(data.seek(off));
-#endif
         ASSERT_NO_THROW(data.write(test_data, off, sizeof(test_data)));
     }
     catch (const std::exception& e)
