@@ -132,23 +132,17 @@ public:
 
     size_t read(
         void* buf,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         foffset_t offset,
-#endif
         size_t count,
         bool complete,
         bool required
-    ) S1B_READ_METHOD_QUALIFIER
+    ) const
     {
         size_t sr;
 
         try
         {
-            sr = os::functions::read(_fd, buf,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-                offset,
-#endif
-                count);
+            sr = os::functions::read(_fd, buf, offset, count);
         }
         catch (const io_exception& e)
         {
@@ -171,9 +165,7 @@ public:
 
     size_t write(
         const void* buf,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         foffset_t offset,
-#endif
         size_t count
     )
     {
@@ -185,11 +177,7 @@ public:
 
         try
         {
-            os::functions::write(_fd, buf,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-                offset,
-#endif
-                count);
+            os::functions::write(_fd, buf, offset, count);
         }
         catch (const io_exception& e)
         {
@@ -203,36 +191,24 @@ public:
     template <typename T>
     size_t read_object(
         T& o,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         foffset_t offset,
-#endif
         bool required
-    ) S1B_READ_METHOD_QUALIFIER
+    ) const
     {
         const size_t s = sizeof(T);
         char* const po = reinterpret_cast<char*>(&o);
-        return read(po,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            offset,
-#endif
-            s, true, required);
+        return read(po, offset, s, true, required);
     }
 
     template <typename T>
     size_t write_object(
-        const T& o
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-        , foffset_t offset
-#endif
+        const T& o,
+        foffset_t offset
     )
     {
         const size_t s = sizeof(T);
         const char* const po = reinterpret_cast<const char*>(&o);
-        write(po,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-        offset,
-#endif
-        s);
+        write(po, offset, s);
         return s;
     }
 

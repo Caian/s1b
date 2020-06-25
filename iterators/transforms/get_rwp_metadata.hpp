@@ -38,9 +38,9 @@ struct get_rwp_metadata
 
     typedef value_type reference;
 
-    typedef S1B_READ_METHOD_QUALIFIER Metadata& MetadataRef;
+    typedef const Metadata& MetadataRef;
 
-    typedef S1B_READ_METHOD_QUALIFIER Metadata* MetadataPtr;
+    typedef const Metadata* MetadataPtr;
 
     MetadataPtr _metadata;
 

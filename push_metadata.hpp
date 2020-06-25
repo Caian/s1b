@@ -46,12 +46,9 @@ namespace s1b {
 // TODO assert meta check
 
 template <typename MetaAdapter>
-class push_metadata : public rwp_metadata_base<MetaAdapter,
-#if defined(S1B_DISABLE_ATOMIC_RW)
-    push_buffer
-#else
+class push_metadata : public rwp_metadata_base<
+    MetaAdapter,
     s1b::helpers::seekrw_proxy<push_buffer>
-#endif
     >
 {
 private:
@@ -60,13 +57,7 @@ private:
 
 public:
 
-    typedef
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        push_buffer
-#else
-        s1b::helpers::seekrw_proxy<push_buffer>
-#endif
-        meta_buffer_type;
+    typedef s1b::helpers::seekrw_proxy<push_buffer> meta_buffer_type;
 
     typedef rwp_metadata_base<MetaAdapter, meta_buffer_type> base_type;
 
@@ -107,22 +98,14 @@ private:
     boost::uuids::uuid create_header(
     )
     {
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        meta_buffer_type& proxy = _buffer;
-#else
         meta_buffer_type proxy = _buffer;
-#endif
         return base_type::create_header(proxy);
     }
 
     void create_meta_check(
     )
     {
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        meta_buffer_type& proxy = _buffer;
-#else
         meta_buffer_type proxy = _buffer;
-#endif
         base_type::create_meta_check(proxy);
     }
 
@@ -136,11 +119,7 @@ private:
         const global_struct_type& glob
     )
     {
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        meta_buffer_type& proxy = _buffer;
-#else
         meta_buffer_type proxy = _buffer;
-#endif
         base_type::write_global_struct(proxy, glob);
     }
 

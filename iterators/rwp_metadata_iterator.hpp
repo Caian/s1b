@@ -47,7 +47,7 @@ struct rwp_metadata_iterator_helper
     typedef type ctype;
 
     static type begin(
-        S1B_READ_METHOD_QUALIFIER Metadata& metadata
+        const Metadata& metadata
     )
     {
         transform_type transform(metadata);

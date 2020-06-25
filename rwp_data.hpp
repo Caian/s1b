@@ -85,14 +85,7 @@ private:
             const foffset_t aligned_position = data_size - 1 +
                 data_base::get_data_offset();
 
-#if defined(S1B_DISABLE_ATOMIC_RW)
-            _buffer.seek(aligned_position);
-#endif
-            _buffer.write("",
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-                aligned_position,
-#endif
-                1);
+            _buffer.write("", aligned_position, 1);
         }
 
         return num_slots;
@@ -151,17 +144,7 @@ private:
     )
     {
         const foffset_t position = data_base::get_uuid_offset();
-
-        // TODO assert seek returns
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        _buffer.seek(position);
-#endif
-        const foffset_t size = _buffer.write_object(uuid
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            , position
-#endif
-            );
-
+        const foffset_t size = _buffer.write_object(uuid, position);
         const foffset_t total_size = position + size;
         const foffset_t total_aligned = data_base::get_data_offset();
 
@@ -169,14 +152,7 @@ private:
         {
             const foffset_t aligned_position = total_aligned - 1;
 
-#if defined(S1B_DISABLE_ATOMIC_RW)
-            _buffer.seek(aligned_position);
-#endif
-            _buffer.write("",
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-                aligned_position,
-#endif
-                1);
+            _buffer.write("", aligned_position, 1);
         }
 
         return uuid;
@@ -190,15 +166,7 @@ private:
 
         const foffset_t position = data_base::get_uuid_offset();
 
-        // TODO assert seek returns
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        _buffer.seek(position);
-#endif
-        _buffer.read_object(stored_uuid,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            position,
-#endif
-            true);
+        _buffer.read_object(stored_uuid, position, true);
 
         if (meta_uuid != stored_uuid)
         {
@@ -314,7 +282,7 @@ public:
         foffset_t position,
         foffset_t size,
         unsigned int slot=0
-    ) S1B_READ_METHOD_QUALIFIER
+    ) const
     {
         // TODO position < 0 invalid
         position += data_base::get_data_offset();
@@ -338,15 +306,7 @@ public:
 
         position += slot * _slot_size;
 
-        // TODO assert seek returns
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        _buffer.seek(position);
-#endif
-        _buffer.read(data,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            position,
-#endif
-            size, true, true);
+        _buffer.read(data, position, size, true, true);
     }
 
     void write(
@@ -377,15 +337,7 @@ public:
 
         position += slot * _slot_size;
 
-        // TODO assert seek returns
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        _buffer.seek(position);
-#endif
-        _buffer.write(data,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            position,
-#endif
-            size);
+        _buffer.write(data, position, size);
     }
 
     foffset_t push(
@@ -412,15 +364,7 @@ public:
                 << file_name_ei(filename()));
         }
 
-        // TODO assert seek returns
-#if defined(S1B_DISABLE_ATOMIC_RW)
-        _buffer.seek(position);
-#endif
-        _buffer.write(data,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            position,
-#endif
-            size);
+        _buffer.write(data, position, size);
 
         const foffset_t total_size = position + size;
         const foffset_t total_aligned = mem_align::size<Align>(total_size);
@@ -429,14 +373,7 @@ public:
         {
             const foffset_t aligned_position = total_aligned - 1;
 
-#if defined(S1B_DISABLE_ATOMIC_RW)
-            _buffer.seek(aligned_position);
-#endif
-            _buffer.write("",
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-                aligned_position,
-#endif
-                1);
+            _buffer.write("", aligned_position, 1);
         }
 
         _slot_size = total_aligned;

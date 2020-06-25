@@ -390,7 +390,6 @@ S1B_TEST(ReadNothing)
         meta.uid = s1b::FirstUID;
         ASSERT_THROW(metadata.read_data_offset(meta),
             s1b::invalid_uid_exception);
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         const test_rwp_metadata& cmetadata = metadata;
         ASSERT_FALSE(cmetadata.read(s1b::FirstUID, meta));
         ASSERT_FALSE(cmetadata.read(s1b::FirstUID, meta, offset));
@@ -398,7 +397,6 @@ S1B_TEST(ReadNothing)
         meta.uid = s1b::FirstUID;
         ASSERT_THROW(cmetadata.read_data_offset(meta),
             s1b::invalid_uid_exception);
-#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -638,7 +636,6 @@ S1B_TEST(ReadOnReadOnlyFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(metadata.read(uid_3, meta));
         ASSERT_FALSE(metadata.read(uid_3, meta, offset));
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         const test_rwp_metadata& cmetadata = metadata;
         ASSERT_TRUE(cmetadata.read(uid_0, meta, offset));
         ASSERT_TRUE(meta_ref_1 == meta);
@@ -648,7 +645,6 @@ S1B_TEST(ReadOnReadOnlyFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(cmetadata.read(uid_3, meta));
         ASSERT_FALSE(cmetadata.read(uid_3, meta, offset));
-#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -698,7 +694,6 @@ S1B_TEST(ReadOnWriteableFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(metadata.read(uid_3, meta));
         ASSERT_FALSE(metadata.read(uid_3, meta, offset));
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         const test_rwp_metadata& cmetadata = metadata;
         ASSERT_TRUE(cmetadata.read(uid_0, meta, offset));
         ASSERT_TRUE(meta_ref_1 == meta);
@@ -708,7 +703,6 @@ S1B_TEST(ReadOnWriteableFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(cmetadata.read(uid_3, meta));
         ASSERT_FALSE(cmetadata.read(uid_3, meta, offset));
-#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -756,7 +750,6 @@ S1B_TEST(ReadOnNewFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(metadata.read(uid_3, meta));
         ASSERT_FALSE(metadata.read(uid_3, meta, offset));
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         const test_rwp_metadata& cmetadata = metadata;
         ASSERT_TRUE(cmetadata.read(uid_0, meta, offset));
         ASSERT_TRUE(meta_ref_1 == meta);
@@ -766,7 +759,6 @@ S1B_TEST(ReadOnNewFile)
         ASSERT_TRUE(meta_ref_3 == meta);
         ASSERT_FALSE(cmetadata.read(uid_3, meta));
         ASSERT_FALSE(cmetadata.read(uid_3, meta, offset));
-#endif
         ASSERT_NO_THROW(metadata.sync());
     }
     catch (const std::exception& e)
@@ -895,13 +887,11 @@ S1B_TEST(WriteOnWriteableFile)
         ASSERT_THROW(metadata.write(meta_ref_3),
             s1b::element_mismatch_exception);
         ASSERT_NO_THROW(metadata.sync());
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         const test_rwp_metadata& cmetadata = metadata;
         ASSERT_TRUE(cmetadata.read(uid_0, meta_ref_1));
         ASSERT_TRUE(cmetadata.read(uid_1, meta_ref_2));
         ASSERT_TRUE(cmetadata.read(uid_2, meta_ref_3));
         ASSERT_FALSE(cmetadata.read(uid_3, meta_ref_4));
-#endif
     }
     catch (const std::exception& e)
     {
@@ -967,13 +957,11 @@ S1B_TEST(WriteOnNewFile)
         ASSERT_THROW(metadata.write(meta_ref_3),
             s1b::element_mismatch_exception);
         ASSERT_NO_THROW(metadata.sync());
-#if !defined(S1B_DISABLE_ATOMIC_RW)
         const test_rwp_metadata& cmetadata = metadata;
         ASSERT_TRUE(cmetadata.read(uid_0, meta_ref_1));
         ASSERT_TRUE(cmetadata.read(uid_1, meta_ref_2));
         ASSERT_TRUE(cmetadata.read(uid_2, meta_ref_3));
         ASSERT_FALSE(cmetadata.read(uid_3, meta_ref_4));
-#endif
     }
     catch (const std::exception& e)
     {
@@ -1563,7 +1551,6 @@ S1B_TEST(PushCompatCreateNewAndOpenWrite)
     _PushCompatCreateNew(s1b_file_name, true);
 }
 
-#if !defined(S1B_DISABLE_ATOMIC_RW)
 S1B_TEST(ParallelIOTest)
 
     const int N = 10000;
@@ -1651,6 +1638,5 @@ S1B_TEST(ParallelIOTest)
         FAIL();
     }
 }
-#endif
 
 }

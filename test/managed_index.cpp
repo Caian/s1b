@@ -67,10 +67,7 @@ void _Open(
         Metadata metadata(meta_filename, meta_vector.begin(),
             meta_vector.end());
 
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-        const
-#endif
-        Metadata& rmetadata = metadata;
+        const Metadata& rmetadata = metadata;
 
         if (throws_exception)
         {
