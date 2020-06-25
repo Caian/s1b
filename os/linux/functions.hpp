@@ -84,7 +84,6 @@ struct functions
         return static_cast<size_t>(result);
     }
 
-#if !defined(S1B_DISABLE_ATOMIC_RW)
     static size_t read(
         fd_type fd,
         void* buf,
@@ -103,7 +102,6 @@ struct functions
 
         return static_cast<size_t>(result);
     }
-#endif
 
     static void write(
         fd_type fd,
@@ -130,7 +128,6 @@ struct functions
         }
     }
 
-#if !defined(S1B_DISABLE_ATOMIC_RW)
     static void write(
         fd_type fd,
         const void* buf,
@@ -156,7 +153,6 @@ struct functions
                 << actual_size_ei(uresult));
         }
     }
-#endif
 
     static void fsync(
         fd_type fd

@@ -139,11 +139,7 @@ S1B_TEST(OpenAligned) // TODO add to others
 #if defined(S1B_DISABLE_ATOMIC_RW)
         ASSERT_NO_THROW(data.seek(off));
 #endif
-        ASSERT_NO_THROW(data.write(test_data,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            off,
-#endif
-            sizeof(test_data)));
+        ASSERT_NO_THROW(data.write(test_data, off, sizeof(test_data)));
     }
     catch (const std::exception& e)
     {
@@ -199,11 +195,7 @@ S1B_TEST(OpenMisligned) // TODO add to others
 #if defined(S1B_DISABLE_ATOMIC_RW)
         ASSERT_NO_THROW(data.seek(off));
 #endif
-        ASSERT_NO_THROW(data.write(test_data,
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            off,
-#endif
-            sizeof(test_data)));
+        ASSERT_NO_THROW(data.write(test_data, off, sizeof(test_data)));
     }
     catch (const std::exception& e)
     {
@@ -286,11 +278,7 @@ S1B_TEST(SizeAndSlotSize)
 #if defined(S1B_DISABLE_ATOMIC_RW)
         ASSERT_NO_THROW(data.seek(off));
 #endif
-        ASSERT_NO_THROW(data.write(test_data, // TODO
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            off,
-#endif
-            sizeof(test_data)));
+        ASSERT_NO_THROW(data.write(test_data, off, sizeof(test_data)));
     }
     catch (const std::exception& e)
     {

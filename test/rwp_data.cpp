@@ -781,13 +781,11 @@ S1B_TEST(ReadWriteMultipleSlotFromMetadata)
                 for (int j = 0; j < size; j++)
                     ASSERT_TRUE(test_data[j] == read_data[j]);
 
-#if !defined(S1B_DISABLE_ATOMIC_RW)
                 const s1b::rwp_data& cdata = data;
                 ASSERT_NO_THROW(cdata.read(&read_data[0], off, size, k));
 
                 for (int j = 0; j < size; j++)
                     ASSERT_TRUE(test_data[j] == read_data[j]);
-#endif
             }
         }
 
@@ -825,10 +823,8 @@ S1B_TEST(ReadWriteMultipleSlotFromMetadata)
                 read_data.resize(size);
                 ASSERT_NO_THROW(data.read(&read_data[0], off, size, k));
 
-#if !defined(S1B_DISABLE_ATOMIC_RW)
                 const s1b::rwp_data& cdata = data;
                 ASSERT_NO_THROW(cdata.read(&read_data[0], off, size, k));
-#endif
 
                 test_data.resize(size);
                 for (int j = 0; j < size; j++)

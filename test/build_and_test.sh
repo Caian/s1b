@@ -69,10 +69,7 @@ build_and_test_dir path_static_3 "-DS1B_USE_STATIC_STRINGS"
 build_and_test_dir path_dynamic
 build_and_test_dir push_buffer_10M
 build_and_test_dir push_buffer_16M
-build_and_test_dir . "-DS1B_DISABLE_ATOMIC_RW"
 build_and_test_dir .
-build_and_test_dir . "-DS1B_DISABLE_ATOMIC_RW" "-DTEST_MOVE"
 build_and_test_dir . "-DTEST_MOVE"
 
-fail_build_dir . "(original_" "is private" "-DS1B_DISABLE_ATOMIC_RW" "-DTEST_COPY"
 fail_build_dir . "(original_" "is private" "-DTEST_COPY"

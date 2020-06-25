@@ -278,11 +278,7 @@ S1B_TEST(OpenMisligned) // TODO add to others
 #if defined(S1B_DISABLE_ATOMIC_RW)
         ASSERT_NO_THROW(metadata.seek(position));
 #endif
-        ASSERT_NO_THROW(metadata.write("",
-#if !defined(S1B_DISABLE_ATOMIC_RW)
-            position,
-#endif
-            1));
+        ASSERT_NO_THROW(metadata.write("", position, 1));
         ASSERT_TRUE(metadata.get_size() % 64 != 0);
     }
     catch (const std::exception& e)
